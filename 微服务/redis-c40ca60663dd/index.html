@@ -1,0 +1,1105 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/logo.png">
+  <link rel="icon" href="/img/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Ocsio">
+  <meta name="keywords" content="java">
+  
+    <meta name="description" content="你真的了解缓存吗">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis(二)—你真的了解缓存吗">
+<meta property="og:url" content="http://ocsio.cn/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis-c40ca60663dd/index.html">
+<meta property="og:site_name" content="Ocsio">
+<meta property="og:description" content="你真的了解缓存吗">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ocsio.cn/img/redis.png">
+<meta property="article:published_time" content="2023-12-25T11:24:00.000Z">
+<meta property="article:modified_time" content="2023-12-26T04:07:01.063Z">
+<meta property="article:author" content="Ocsio">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://ocsio.cn/img/redis.png">
+  
+  
+  
+  <title>Redis(二)—你真的了解缓存吗 - Ocsio</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"ocsio.cn","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"JAVA"},"copy_btn":true,"image_caption":{"enable":false},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.0.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Ocsio</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/" target="_self">
+                <i class="iconfont icon-link-fill"></i>
+                <span>友链</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/background.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Redis(二)—你真的了解缓存吗"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-12-25 19:24" pubdate>
+          2023年12月25日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          10k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          85 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Redis(二)—你真的了解缓存吗</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1>缓存</h1>
+<p>本文主要涉及到什么是缓存，如何设计缓存以及在缓存设计中的七大问题经典问题：</p>
+<ol>
+<li>缓存击穿</li>
+<li>缓存穿透</li>
+<li>缓存雪崩</li>
+<li>数据不一致</li>
+<li>数据并发竞争</li>
+<li>Hot Key</li>
+<li>Big Key</li>
+</ol>
+<h2 id="1-什么是缓存">1. 什么是缓存</h2>
+<p>学过计组的朋友应该知道在计算机中，处理器和存储器的性能发展上的差异越来越大，存储器在容量尤其是访问延时方面的性能增长越来越跟不上处理器性能发展的需要，为了缩小存储器和处理器两者之间的性能方面的差异，通常在计算机内部采用层次化的存储器体系结构。</p>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis-c40ca60663dd/image-20231225195601722.png" srcset="/img/loading.gif" lazyload alt="存储器层次结构"></p>
+<p>虽然，上面的性能指标随着时代的发展在不断的变化，但是这些数据反映了存储器速度和容量的关系，由于造价的成本以及技术的局限性，导致速度越快的存储器，容量也会更小。</p>
+<p>在 CPU 执行指令的时候，需要的操作数大多来自于寄存器，如果需要访问存储器时，会先访问高速缓存（cache），如果数据不在 cache 中，才会访问主存。</p>
+<p>这里的 cache 其实就是一种缓存。</p>
+<p>在如今高速发展的互联网时代，为了满足用户个性信息获取以及社交的需求，开发的产品就需要做到以用户和关系为基础，对海量数据进行实时分析计算，也就意味着，用户的每次请求，服务端都要查询用户的个人信息、社交关系图谱，以及关系图谱涉及到的大量关联信息。还要将这些信息进行聚合、过滤、筛选和排序，最终响应给用户。如果这些信息全部从数据库中加载，将会是一个难以忍受的漫长等待过程。</p>
+<p>这里将用户的高并发访问请求，比作 CPU 向存储器取数据的行为，那么普通的主存储器就好像是数据库，而数据库又难以应对如此高的并发量，所有，就可以在请求和数据库之间，加入缓存来提升系统的性能，改善用户体验。</p>
+<h2 id="2-缓存的基本思想">2. 缓存的基本思想</h2>
+<h3 id="2-1-程序局部性原理">2.1 程序局部性原理</h3>
+<p>对于 CPU 和主存之间的 cache 缓存，其实是利用了程序的时间局部性原理和空间局部性原理，</p>
+<ul>
+<li>时间局部性原理：某一块刚被访问的内存数据（指令或者数据），它可能在不久的将来会被重复访问。产生的典型原因是在程序中存在大量的循环结构的代码。</li>
+<li>空间局部性原理：某一块刚被访问的内存数据，它的相邻的内存区域也可能被访问，典型的情况就是程序的顺序访问。</li>
+</ul>
+<p>而对于像 redis 这样的缓存中间件来说，更主要的是体现在时间局部性上，比如一篇新闻，如果被一个人感兴趣并阅读后，它大概率还会被更多人阅读。</p>
+<h3 id="2-2-空间换时间">2.2 空间换时间</h3>
+<p>由于原始数据（数据库中的数据）获取太慢，所以我们开辟一块高速独立空间（内存），提供高效访问，达到数据获取加速的目的。</p>
+<h2 id="3-缓存的优劣">3. 缓存的优劣</h2>
+<table>
+<thead>
+<tr>
+<th>缓存的优势</th>
+<th>增加缓存带来的负面影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>提高访问性能</td>
+<td>系统复杂度会增大</td>
+</tr>
+<tr>
+<td>降低响应时间</td>
+<td>数据一致性成本</td>
+</tr>
+<tr>
+<td>减轻服务负载</td>
+<td>代码维护、系统部署成本</td>
+</tr>
+<tr>
+<td>增强可扩展性</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>但如果我们加强对缓存原理、缓存组件以及优秀缓存体系实践的理解，从系统架构之初就对缓存进行良好设计，降低缓存引入的副作用，就可以让缓存体系成为服务系统高效稳定运行的强力基石。</p>
+<h2 id="4-缓存的读写模式和分类">4. 缓存的读写模式和分类</h2>
+<h3 id="4-1-缓存的读写模式">4.1 缓存的读写模式</h3>
+<p>对于业务系统来说，读写缓存有 3 种模式：</p>
+<ol>
+<li>旁路缓存（Cache Aside）</li>
+<li>读写穿透（Read/Write Through）</li>
+<li>异步缓存写入（Write Behind Caching）</li>
+</ol>
+<h4 id="Cache-Aside">Cache Aside</h4>
+<p>在 Cache Aside 模式中，</p>
+<ul>
+<li>对于写缓存，是更新 DB 后，直接将 key 从 cache 中删除，后续在查询该数据时由 DB 驱动缓存数据的更新</li>
+<li>对于读缓存，是先读 cache，如果 cache 没有，则读 DB，同时将从 DB 中读取的数据回写到 cache。</li>
+</ul>
+<p>这种模式的特点是，由业务端处理所有的数据访问细节，同时存在一种懒惰的思想，在更新 DB 后，直接删除 cache 并通过 DB 更新，确保数据以 DB 结果为准，大幅降低了 cache 和 DB 中数据不一致的概率。</p>
+<p>这适用于对数据一致性要求较高、或者是缓存数据更新较为复杂的业务。</p>
+<h4 id="Read-Write-Through">Read/Write Through</h4>
+<p>对于 Cache Aside 模式，业务端需要同时维护 cache 和 DB，过于繁琐，于是就有了 Read/Write Through 模式。</p>
+<p>在这种模式下，业务端只关注 cache 或者 DB 即可，业务方对 cache 和 DB 的读写，都由存储服务代理。当存储服务收到业务应用：</p>
+<ul>
+<li>写请求，首先查 cache，如果数据在 cache 中不存在，则只更新 DB，如果数据在 cache 中存在，则先更新 cache，然后更新 DB。</li>
+<li>读请求，如果命中 cache 直接返回，否则先从 DB 加载，回写到 cache 后返回响应。</li>
+</ul>
+<p>这种模式的特点是，存储服务封装了所有的数据处理细节，业务端代码只用关注业务逻辑本身，系统的隔离性更好。另外，进行写操作时，如果 cache 中没有数据则不更新，有缓存数据才更新，内存效率更高。</p>
+<h4 id="Write-Behind-Caching">Write Behind Caching</h4>
+<p>Write Behind Caching 模式与 Read/Write Through 模式类似，也由数据存储服务来管理 cache 和 DB 的读写。</p>
+<p>不同点是，数据更新时，Read/write Through 同步更新 cache 和 DB，而 Write Behind Caching 只更新缓存，不直接更新 DB，而是异步批量的更新 DB。</p>
+<p>这种模式的特点是，数据存储的写性能最高，非常适合一些变更特别频繁的业务，特别是可以合并写请求的业务，如对一些计数业务，一条推文被点赞 1 万次，如果更新 1 万次，那么 DB 代价很大，而合并成一次请求直接加 1 万，则是一个非常轻量的操作。</p>
+<p>但显著的缺点是，数据的一致性变差，在一些极端场景下可能会丢失数据。比如机器宕机时，如果有数据还没保存到 DB，则会存在丢失的风险。所以这种读写模式适合变更频率特别高，但对一致性要求不太高的业务，写操作可以异步批量写入 DB，减小 DB 压力。</p>
+<h3 id="4-2-缓存的分类">4.2 缓存的分类</h3>
+<p>按宿主层次分类的话，缓存一般可以分为本地 Cache、进程间 Cache 和远程 Cache。</p>
+<ul>
+<li>本地 Cache 是指业务进程内的缓存，这类缓存由于在业务系统进程内，所以读写性能超高且无任何网络开销，但不足是会随着业务系统重启而丢失。</li>
+<li>进程间 Cache 是本机独立运行的缓存，这类缓存读写性能较高，不会随着业务系统重启丢数据，并且可以大幅减少网络开销，但不足是业务系统和缓存都在相同宿主机，运维复杂，且存在资源竞争。</li>
+<li>远程 Cache 是指跨机器部署的缓存，这类缓存因为独立设备部署，容量大且易扩展，在互联网企业使用最广泛。不过远程缓存需要跨机访问，在高读写压力下，带宽容易成为瓶颈。</li>
+</ul>
+<p>本地 Cache 的缓存组件有 Ehcache、Guava Cache 等，我们也可以用 Map、Set 等轻松构建一个自己专用的本地 Cache。进程间 Cache 和远程 Cache 的缓存组件相同，只是部署位置的差异罢了，这类缓存组件有 Memcached、Redis 等。</p>
+<p>同时，在实际开发中，我们也会构筑 <strong>多级缓存</strong> 来使系统运行速度进一步提升，例如本地缓存与 redis 中的缓存并发使用</p>
+<ul>
+<li><strong>浏览器缓存</strong>：主要是存在于浏览器端的缓存</li>
+<li><strong>应用层缓存</strong>：可以分为 Tomcat 本地缓存，如 map，或者是使用 redis 作为缓存</li>
+<li><strong>数据库缓存</strong>：在数据库中有一片空间是 Buffer Pool，增改查数据都会先加载到 MySQL 的缓存中</li>
+<li><strong>CPU 缓存</strong>：CPU 的 L1，L2，L3 级缓存</li>
+</ul>
+<h2 id="5-缓存的七大问题">5. 缓存的七大问题</h2>
+<h3 id="5-1-缓存击穿">5.1 缓存击穿</h3>
+<p>也称为缓存失效、热点 Key 问题。</p>
+<h4 id="问题描述">问题描述</h4>
+<p>在业务访问时，如果大量的热点 Key 同时过期，那么大量的请求就会绕过缓存直接打到数据库，数据库的员压力就会明显上升，而由于数据库的性能较差，很有可能就会导致系统崩溃。这就是缓存击穿。</p>
+<h4 id="原因">原因</h4>
+<p>我们在写缓存时，通常会给 key 设置一个过期时间，一般情况下，由于缓存数据是逐步写入的，所以也是逐步过期并被淘汰的，但在某些特定情况下，一大批数据会在很小的时间差内被系统主动从数据库加载到缓存中，那么这些数据也会在某个时间段同时过期，这就导致了缓存的热点 key 大量失效。</p>
+<h4 id="解决">解决</h4>
+<p><strong>1）加一个随机时间</strong></p>
+<p>其实我们发现，造成缓存击穿的原因主要是对每个 key 都设置了固定的过期时间，所以第一个解决方案是，合理的设计缓存的过期时间，使用下面的公式：</p>
+<p class="katex-block "><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mtext>过期时间</mtext><mo>=</mo><mi>b</mi><mi>a</mi><mi>s</mi><mi>e</mi><mtext>  </mtext><mtext>时间</mtext><mo>+</mo><mtext>随机时间</mtext></mrow><annotation encoding="application/x-tex">过期时间 = base\;时间 + 随机时间
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord cjk_fallback">过期时间</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">ba</span><span class="mord mathnormal">se</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord cjk_fallback">时间</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord cjk_fallback">随机时间</span></span></span></span></span></p>
+<p>一批相同业务数据在写缓存时，在基础过期时间之上，再加一个随机的过期时间，让数据在未来一段时间内慢慢过期，避免在极短时间内全部过期，对数据库造成过大压力。</p>
+<p><strong>2）互斥锁</strong></p>
+<p>由于缓存击穿的问题，从表面上看，是因为大量的请求到来，查询缓存失效，导致这些请求的线程都访问数据库进行缓存重建，对数据库造成过大的压力，那么我们就可以对缓存重建的操作加锁，并进行 double check 处理，保证只有一个并发的线程能够访问到数据库，自然数据库也就不存在压力了。</p>
+<p>一个加锁的方案是使用 redis 的 setnx 命令，当 redis 中没有指定的 key 时，插入会成功，如果存在指定的 key 则插入失败，根据返回的结果来判断是否加锁成功，这类似于信号量机制。</p>
+<p>示例代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">tryLock</span><span class="hljs-params">(String key)</span> &#123;<br>    <span class="hljs-type">Boolean</span> <span class="hljs-variable">flag</span> <span class="hljs-operator">=</span> stringRedisTemplate.opsForValue()<br>        .setIfAbsent(key, <span class="hljs-string">&quot;1&quot;</span>, LOCK_SHOP_TTL, TimeUnit.SECONDS);<br>    <span class="hljs-keyword">return</span> BooleanUtil.isTrue(flag);<br>&#125;<br><br><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">unLock</span><span class="hljs-params">(String key)</span> &#123;<br>    stringRedisTemplate.delete(key);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>至于为什么需要 double-check，在这种方案中，我们会让并发的线程死循环的进行 tryLock（当然在每一次加锁失败都会 sleep 一段时间防止浪费 CPU），所以，在当前线程加锁的那一段时间，可能会有并发的线程已经完成了缓存重建，那么自然就可以直接返回了。</p>
+<p>示例代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> Entity <span class="hljs-title function_">queryWithMutex</span><span class="hljs-params">(Long id)</span> &#123;<br>    <span class="hljs-comment">// 从 redis 中查询缓存</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">cache</span> <span class="hljs-operator">=</span> stringRedisTemplate.opsForValue().get(cache_key);<br>    <span class="hljs-comment">// 判断缓存是否命中的逻辑</span><br>    <span class="hljs-comment">// 这里如果命中则直接返回</span><br>    ...<br>    <span class="hljs-comment">// 如果没有命中</span><br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 缓存未命中，则尝试获取互斥锁</span><br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">isLock</span> <span class="hljs-operator">=</span> tryLock(lockKey);<br>        <span class="hljs-keyword">if</span> (!isLock) &#123;<br>            <span class="hljs-comment">// 获取锁失败，则线程休眠一段时间后，重试</span><br>            TimeUnit.MILLISECONDS.sleep(<span class="hljs-number">100</span>);<br>            <span class="hljs-keyword">return</span> queryWithMutex(id);<br>        &#125;<br>        <span class="hljs-comment">// 获取锁成功，判断此时缓存是否存在</span><br>        <span class="hljs-comment">// 当前线程加锁的过程中，其他线程可能已经将缓存写入了</span><br>        <span class="hljs-type">String</span> <span class="hljs-variable">doubleCheckCache</span> <span class="hljs-operator">=</span> stringRedisTemplate.opsForValue().get(key);<br>        <span class="hljs-keyword">if</span> (doubleCheckCache != <span class="hljs-literal">null</span>) &#123;<br>            <span class="hljs-keyword">return</span> Entity;<br>        &#125;<br>        <span class="hljs-comment">// 由当前线程进行缓存重建 (查询数据库)</span><br>        <span class="hljs-type">Entity</span> <span class="hljs-variable">e</span> <span class="hljs-operator">=</span> getById(id);<br>        <span class="hljs-comment">// 后续处理</span><br>    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(e);<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        <span class="hljs-comment">// 释放互斥锁</span><br>        unLock(lockKey);<br>    &#125;<br>    <span class="hljs-keyword">return</span> e;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p><strong>3）逻辑过期</strong></p>
+<p>第三种方案和第一种类似，都是从过期时间上入手来解决这个问题。</p>
+<p>这里具体的做法是，在 redis 层面，不设置过期时间，而是采用逻辑过期的策略。</p>
+<p>将逻辑过期时间设置在 redis 的 value 中，这个过期时间并不会直接作用于 redis，而是后续通过业务代码逻辑去处理。</p>
+<p>假设并发的线程都去查询缓存，从获取的 value 中判断出当前的数据已经过期，那么这些线程就会尝试获取互斥锁进行缓存重建，但只有一个线程可以获取成功，不访假设该线程是 a 线程，其它获取锁失败的线程可以直接返回旧数据。</p>
+<p>a 线程会开启一个新的线程 b 去执行缓存重建逻辑，而 a 线程在提交了任务之后也是直接返回旧数据，直到 c 线程完成缓存重建后释放锁，在这期间，如果有其他线程来访问，由于 c 线程持有锁，那么这些线程也只有返回旧数据。</p>
+<p>只有等到 c 线程缓存重建后释放锁，其他线程才能返回新的数据。</p>
+<p>这种方案巧妙在于，异步的构建缓存，缺点在于构建完缓存之前，返回的都是脏数据。</p>
+<p>时序示例：</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>t1 线程</th>
+<th>t2 线程</th>
+<th>t3 线程</th>
+<th>t4 线程</th>
+<th>t5 线程</th>
+<th>子线程</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>访问，尝试获取锁</td>
+<td>访问，尝试加锁</td>
+<td>访问，尝试加锁</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td>加锁成功，开启子线程，返回旧数据</td>
+<td>失败，返回旧数据</td>
+<td>失败，返回旧数据</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td></td>
+<td></td>
+<td></td>
+<td>访问，尝试加锁</td>
+<td></td>
+<td>执行缓存重建</td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td></td>
+<td></td>
+<td>失败，返回旧数据</td>
+<td></td>
+<td>执行缓存重建</td>
+</tr>
+<tr>
+<td>4</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>访问，尝试加锁</td>
+<td>缓存重建完，释放锁</td>
+</tr>
+<tr>
+<td>5</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>成功</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>示例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> Entity <span class="hljs-title function_">queryWithLogicExpire</span><span class="hljs-params">(Long id)</span> &#123;<br>    <span class="hljs-comment">// 从 redis 中查询缓存，看是否过期</span><br>    ...<br>    <span class="hljs-comment">// 若过期，进行缓存重建</span><br>    <span class="hljs-comment">// 尝试获取锁</span><br>    <span class="hljs-type">boolean</span> <span class="hljs-variable">isLock</span> <span class="hljs-operator">=</span> tryLock(lockKey);<br>    <span class="hljs-comment">// 判断锁是否获取成功</span><br>    <span class="hljs-keyword">if</span> (isLock) &#123;<br>        <span class="hljs-comment">// 获取锁成功</span><br>        <span class="hljs-comment">// 再次检测 redis 缓存是否过期 double check </span><br>        ...<br>        <span class="hljs-comment">// 判断是否过期</span><br>        <span class="hljs-keyword">if</span> (doubleCheckExpireTime.isAfter(LocalDateTime.now())) &#123;<br>            <span class="hljs-comment">// 未过期，直接返回</span><br>            <span class="hljs-keyword">return</span> e;<br>        &#125;<br>        <span class="hljs-comment">// 否则开启独立线程执行缓存重建</span><br>        CACHE_REBUILD_EXECUTOR.submit(() -&gt; &#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                <span class="hljs-comment">// 执行缓存重建</span><br>            &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(e);<br>            &#125; <span class="hljs-keyword">finally</span> &#123;<br>                <span class="hljs-comment">// 释放锁</span><br>                unLock(lockKey);<br>            &#125;<br>        &#125;);<br>    &#125;<br>    <span class="hljs-comment">// 返回过期信息</span><br>    <span class="hljs-keyword">return</span> e;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h4 id="对比">对比</h4>
+<p><strong>互斥锁方案</strong>：保证了互斥性，所以数据一致，且实现较为简单，仅仅只需加锁，没有额外的内存消耗，缺点是有锁就有 <strong>死锁问题</strong> 的发生，并且线程只能 <strong>串行执行</strong>，高并发下性能会受到较大的影响，尤其是对于缓存重建较为复杂的业务，该方案不适用。</p>
+<p><strong>逻辑过期方案</strong>：线程访问过程中无需等待，性能好，创建一个额外的线程持有锁去进行缓存重建，但在重建数据完成前，其他的线程只能返回旧数据，并且实现起来较为麻烦。</p>
+<h3 id="5-2-缓存穿透">5.2 缓存穿透</h3>
+<h4 id="问题描述-2">问题描述</h4>
+<p>缓存穿透是指 <strong>客户端请求的数据在缓存中和数据库中都不存在</strong>，这样，缓存永远不会生效，而所有的请求都会打到数据库。如果存在一些 “特殊访客”，控制一批肉鸡机器，持续访问系统中不存在的 key，就会对数据库产生很大的压力，影响正常服务。</p>
+<h4 id="原因-2">原因</h4>
+<p>缓存穿透存在的原因，是我们在系统设计时，更多考虑的是正常情况下的访问，而对于异常（如黑客）等的访问未加限制。</p>
+<h4 id="解决-2">解决</h4>
+<p>如何解决缓存穿透？</p>
+<ul>
+<li>第一种方案是，查询这些不存在的数据时，先查询缓存，但未命中，则查询数据库，如果数据库中仍没有查到结果，那么返回 NULL，仍然记录这个 key 到缓存，只是该 key 对应的 value 是一个特殊设置的值。</li>
+<li>第二种方案是，构建一个 BloomFilter 缓存过滤器，记录全量数据，这样访问数据时，直接通过 BloomFilter 判断这个 key 是否存在，如果不存在直接返回即可，根本无需查缓存和数据库。</li>
+</ul>
+<p>一些注意点。</p>
+<ul>
+<li>对于方案一，如果黑客持续访问大量的不存在的 key，这些 key 即便只存一个简单的默认值，也会占用大量的缓存空间，导致正常 key 的命中率下降。所以，对这些不存在的 key，只存较短的时间，让它们尽快过期。或者将这些不存在的 key 存在一个独立的公共缓存，从缓存查找时，先查正常的缓存组件，如果未命中，则查一下公共的非法 key 的缓存，如果后者命中，直接返回，否则穿透到数据库，如果查出来是空，则回写到非法 key 缓存，否则回写到正常缓存。</li>
+<li>对于方案二，BloomFilter 要缓存全量的 key，这就要求全量的 key 数量不大，10 亿条数据以内最佳，因为 10 亿条数据大概要占用 1.2GB 的内存。也可以用 BloomFilter 缓存非法 key，每次发现一个 key 是不存在的非法 key，就记录到 BloomFilter 中，这种记录方案，会导致 BloomFilter 存储的 key 持续高速增长，为了避免记录 key 太多而导致误判率增大，需要定期清零处理。</li>
+</ul>
+<h4 id="BloomFilter">BloomFilter</h4>
+<h5 id="概述">概述</h5>
+<p>布隆过滤器（BloomFilter）是一种 <strong>空间高效</strong> 的 <strong>概率型</strong> 数据结构，用于判断一个元素是否属于某个集合。经常被用于快速检查一个元素是否存在于大型数据集中，同时具有很低的内存消耗。</p>
+<p>基本思想：使用 <strong>多个哈希函数</strong> 将元素映射到一个 <strong>位数组</strong> 中的 <strong>多个位置</strong>，每个哈希函数对应位数组的一个位置。当判断一个元素是否在集合中时，将这个元素经过哈希函数映射到位数组中的相应位置，如果所有对应的位都已经被置为 1，则可以大致判定元素可能在集合中，如果有任何一个位为 0，则可以确定元素肯定不在集合中。</p>
+<p>布隆过滤器的优点在于它占用的内存非常小，适合处理大规模的数据集合，而且查询速度非常快。然而，它也有一些缺点：</p>
+<ol>
+<li><strong>误判率</strong>：由于哈希函数的映射和位数组的有限大小，布隆过滤器存在一定的误判率。<strong>即使一个元素没有在集合中，也有可能被误判为在集合中</strong>。</li>
+<li><strong>删除困难</strong>：一旦元素被加入布隆过滤器，通常无法直接删除，因为删除一个元素可能会影响到其他元素的判断结果。</li>
+<li><strong>无法存储具体信息</strong>：布隆过滤器只能告诉你元素可能在集合中，但不能存储元素的具体信息。</li>
+</ol>
+<p>布隆过滤器在很多应用场景中非常有用，例如：</p>
+<ul>
+<li>网络爬虫中用于快速判断一个 URL 是否已经被访问过。</li>
+<li>数据库查询中用于减少对庞大数据库的查询次数。</li>
+<li>分布式系统中用于判定某个数据是否已经同步过。</li>
+<li>防止缓存穿透，过滤掉不存在的数据查询。</li>
+</ul>
+<p>布隆过滤器适合那些可以 <strong>容忍一定误判率</strong> 的场景，但不适合那些对于误判率要求较高的场景。</p>
+<h5 id="实现原理">实现原理</h5>
+<p>通常判断某个元素是否存在用的是什么？HashMap？将值映射到 HashMap 的 Key，然后在 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord">1</span><span class="mclose">)</span></span></span></span> 的时间复杂度内返回结果，效率很高。</p>
+<p>但是 HashMap 的实现也有缺点，如存储容量高，考虑到负载因子的存在，通常空间是不能被用满的，而一旦值很多，多达上亿的时候，那 HashMap 占据的内存大小就变得很可观了。</p>
+<p>若数据集存储在远程服务器上，本地服务接受输入，而数据集非常大，不可能一次性读进内存构建 HashMap 的时候，也会存在问题。</p>
+<p>如果你可以容忍一定误判率，那么不访试试布隆过滤器，它相较于 HashMap 来说，有着极大的空间优化。</p>
+<p>布隆过滤器是一个 bit 向量或者 bit 数组：</p>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis-c40ca60663dd/image-20231226091636681.png" srcset="/img/loading.gif" lazyload alt="bit 向量"></p>
+<p>如果要映射一个值到布隆过滤器中，需要使用多个不同的哈希函数生成多个哈希值，并将每个生成的哈希值指向的 bit 位置为 1，如针对值 “baidu” 和三个不同的哈希函数分别生成了哈希值 0、3、7，则上图转变为：</p>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis-c40ca60663dd/image-20231226091931703.png" srcset="/img/loading.gif" lazyload alt="布隆过滤器"></p>
+<p>再存一个值 “tencent”，如果哈希函数返回 2、3、6 的话，则：</p>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis-c40ca60663dd/image-20231226092132757.png" srcset="/img/loading.gif" lazyload alt="布隆过滤器"></p>
+<p>3 这个 bit 位由于两个值的哈希函数都返回了这个 bit 位，因此它被覆盖了。</p>
+<p>现在查询 “ocsio” 这个值是否存在，哈希函数返回了 0、4、7 三个值，结果发现 4 这个 bit 位上的值为 0，<strong>说明没有任何一个值映射到这个 bit 位上</strong>，因此可以很明确地说 “ocsio” 这个值不存在。</p>
+<p>而当查询 “baidu” 这个值是否存在，那么哈希函数必然会返回 0、3、7，检查发现这三个 bit 位上的值均为 1，那么可以说 “baidu” <strong>存在了么？答案是不可以，只能是 “baidu” 这个值可能存在。</strong></p>
+<p>因为随着增加的值越来越多，被置为 1 的 bit 位也会越来越多，这样某个值如 “taobao” 即使没有被存储过，但是若哈希函数返回的三个 bit 位都被其他值置为了 1 ，那么程序还是会判断 “taobao” 这个值存在。</p>
+<p>这也是布隆过滤器的 <strong>误判率</strong> 所在，即使一个元素没有在集合中，也可能被误判为在集合中。</p>
+<h5 id="三个公式">三个公式</h5>
+<p>布隆过滤器涉及到几个重要的公式，用于计算布隆过滤器所需的参数和性能指标：</p>
+<p>1）<strong>位数组大小（<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span></span></span></span>）的计算</strong>：布隆过滤器使用一个位数组来存储数据，每个位表示一个位置的状态（<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn></mrow><annotation encoding="application/x-tex">1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span> 或 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn></mrow><annotation encoding="application/x-tex">0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>）。要存储 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> 个元素，假设期望的误判率为 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi></mrow><annotation encoding="application/x-tex">p</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">p</span></span></span></span>，位数组大小 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span></span></span></span> 可以通过以下公式计算，向上取整：</p>
+<p class="katex-block "><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>m</mi><mo>=</mo><mo>−</mo><mfrac><mrow><mi>n</mi><mo>×</mo><mi>l</mi><mi>n</mi><mtext>  </mtext><mi>p</mi></mrow><mrow><mo stretchy="false">(</mo><mi>l</mi><mi>n</mi><mtext>  </mtext><mn>2</mn><msup><mo stretchy="false">)</mo><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex">m=-\frac{n×ln\;p}{(ln\;2)^2}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.3074em;vertical-align:-0.936em;"></span><span class="mord">−</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">2</span><span class="mclose"><span class="mclose">)</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7401em;"><span style="top:-2.989em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">p</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<p>2）<strong>哈希函数个数（<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span>）的计算</strong></p>
+<p>布隆过滤器使用多个哈希函数来将元素映射到位数组中的多个位置。哈希函数的个数可以通过以下公式计算：</p>
+<p class="katex-block "><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>k</mi><mo>=</mo><mi>l</mi><mi>n</mi><mtext>  </mtext><mn>2</mn><mo>×</mo><mfrac><mi>m</mi><mi>n</mi></mfrac></mrow><annotation encoding="application/x-tex">k = ln\;2 ×\frac{m}{n}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.01968em;">l</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.7936em;vertical-align:-0.686em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1076em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">n</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">m</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<p>其中 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span></span></span></span> 是位数组大小，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> 是要存储的元素个数。</p>
+<p>3）<strong>实际误判率（<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi></mrow><annotation encoding="application/x-tex">P</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span></span></span></span>）的计算</strong></p>
+<p>布隆过滤器的实际误判率取决于位数组大小、哈希函数个数以及要存储的元素个数。可以通过以下公式估计实际误判率：</p>
+<p class="katex-block "><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>P</mi><mo>=</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mfrac><mrow><mi>n</mi><mi>k</mi></mrow><mi>m</mi></mfrac></mrow></msup><msup><mo stretchy="false">)</mo><mi>k</mi></msup></mrow><annotation encoding="application/x-tex">P= (1-e^{-\frac{nk}{m}})^k
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.279em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:1.029em;"><span style="top:-3.413em;margin-right:0.05em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight"><span class="mopen nulldelimiter sizing reset-size3 size6"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.88em;"><span style="top:-2.656em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">m</span></span></span></span><span style="top:-3.2255em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line mtight" style="border-bottom-width:0.049em;"></span></span><span style="top:-3.384em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">nk</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.344em;"><span></span></span></span></span></span><span class="mclose nulldelimiter sizing reset-size3 size6"></span></span></span></span></span></span></span></span></span></span><span class="mclose"><span class="mclose">)</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.03148em;">k</span></span></span></span></span></span></span></span></span></span></span></span></p>
+<p>其中 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> 是哈希函数个数，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> 是要存储的元素个数，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span></span></span></span> 是位数组大小。</p>
+<p>这些公式提供了布隆过滤器的一些理论指导，但实际应用中可能会受到哈希函数的质量、实际数据分布等因素的影响，因此实际性能可能会略有偏差。</p>
+<p><strong>如何获取 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> 个哈希函数？</strong></p>
+<p>在布隆过滤器中，选择适当的哈希函数个数 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> 是一个重要的考虑因素，它会影响到误判率和性能。合适的哈希函数个数 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> 可以通过以下方法来选择：</p>
+<ol>
+<li><strong>独立的哈希函数</strong>：选择多个相互独立的哈希函数。这些哈希函数应该能够均匀地将元素映射到位数组中的不同位置，以减少碰撞的可能性。常见的哈希函数有散列函数（如 MD5、SHA-1、SHA-256 等）。</li>
+<li><strong>多次哈希</strong>：通过多次应用同一个哈希函数并引入不同的种子值，产生多个哈希值。这样可以模拟多个独立的哈希函数。例如，对于一种哈希函数 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi></mrow><annotation encoding="application/x-tex">h</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span></span></span></span>，可以计算 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>h</mi><mn>1</mn></msub><mo>=</mo><mi>h</mi><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>s</mi><mi>e</mi><mi>e</mi><mi>d</mi><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">h_1=h(x, seed1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">h</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">h</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">see</span><span class="mord mathnormal">d</span><span class="mord">1</span><span class="mclose">)</span></span></span></span>、<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>h</mi><mn>2</mn></msub><mo>=</mo><mi>h</mi><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>s</mi><mi>e</mi><mi>e</mi><mi>d</mi><mn>2</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">h_2=h(x,seed2)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">h</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">h</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">see</span><span class="mord mathnormal">d</span><span class="mord">2</span><span class="mclose">)</span></span></span></span> 等多个哈希值。</li>
+<li><strong>取模操作</strong>：每个哈希值计算出一个位置，这个位置可能超过位数组的大小。通过对位置进行取模操作，将其映射到位数组的范围内。这样可以保证哈希值的范围在位数组大小之内。</li>
+</ol>
+<p>常见的做法是结合多个哈希函数，如选择一组独立的哈希函数，每个函数对输入进行不同的变换，并取模映射到位数组的范围内。</p>
+<p>总之，选择哈希函数个数 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> 需要考虑实际应用的误判率要求和性能。较大的 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> 值可以减少误判率，但会增加计算成本，较小的 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> 值可能会导致较高的误判率。通常情况下，根据误判率和数据规模，选择适当的哈希函数个数 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> 可以在误判率和性能之间取得平衡。</p>
+<h3 id="5-3-缓存雪崩">5.3 缓存雪崩</h3>
+<h4 id="问题描述-3">问题描述</h4>
+<p>缓存雪崩是指缓存中 <strong>大量数据同时过期</strong>，或者是 <strong>部分缓存节点不可用</strong> 导致整个缓存体系甚至服务系统不可用的情况。</p>
+<p>缓存雪崩按照缓存是否 rehash（即是否漂移）分两种情况：</p>
+<ul>
+<li>缓存不支持 rehash 导致的系统雪崩不可用</li>
+<li>缓存支持 rehash 导致的缓存雪崩不可用</li>
+</ul>
+<h4 id="原因-3">原因</h4>
+<p>缓存不进行 rehash 时产生的雪崩，一般是由于较多缓存节点不可用，请求穿透导致数据库过载，最终整个系统雪崩不可用。</p>
+<p>而缓存支持 rehash 时产生的雪崩，大多跟流量洪峰有关，流量洪峰到达，引发部分缓存节点过载而崩溃，然后因 rehash 扩散到其他缓存节点，最终整个缓存体系异常。</p>
+<p>第一种情况容易理解，缓存节点不支持 rehash，较多缓存节点不可用时，大量 Cache 访问会失败，根据缓存读写模型，这些请求会进一步访问数据库，而数据库可承载的访问量远比缓存小的多，请求量过大，就很容易造成数据库过载，大量慢查询，最终阻塞甚至崩溃，从而导致服务异常。</p>
+<p>第二种情况是怎么回事呢？在缓存分布设计时，一般会选择一致性 Hash 分布方式，同时在部分节点异常时，采用 rehash 策略，即把异常节点请求平均分散到其他缓存节点。一般情况下，一致性 Hash 分布 + rehash 策略可以很好得运行，但在较大的流量洪峰到临之时，如果大流量 key 比较集中，正好在某 1～2 个缓存节点，很容易将这些缓存节点的内存、网卡过载，导致缓存节点异常崩溃，然后这些异常节点下线，这些大流量 key 请求又被 rehash 到其他缓存节点，进而导致其他缓存节点也被过载崩溃，缓存异常持续扩散，最终导致整个缓存体系异常，无法对外提供服务。</p>
+<h4 id="解决-3">解决</h4>
+<p>预防缓存雪崩，这里给出 3 个解决方案。</p>
+<p>1）方案一，<strong>服务熔断或者请求限流</strong>，对业务数据库的访问增加读写开关，当发现数据库请求变慢、阻塞，慢请求超过阀值时，则关闭读开关，部分或所有读数据库的请求进行 fail fast 立即返回，待数据库恢复后再打开读开关。</p>
+<p>2）方案二，对缓存增加多个副本，缓存异常或请求未命中后，再读取其他缓存副本，多个缓存副本尽量部署在不同机器，从而确保在任何情况下，缓存系统都会正常对外提供服务。</p>
+<p>3）方案三，对缓存体系实时监控，当请求访问的慢速比超过阀值时，及时报警，通过机器替换、<strong>服务降级</strong> 进行及时恢复，也可以通过各种自动故障转移策略，自动关闭异常接口、停止边缘服务和部分非核心功能措施，确保在极端场景下，核心功能的正常运行。</p>
+<h3 id="5-4-数据不一致">5.4 数据不一致</h3>
+<h4 id="问题描述-4">问题描述</h4>
+<p>数据不一致分为两种情况：</p>
+<ul>
+<li>缓存中有数据，那么，缓存的数据需要和数据库中的数据一致；</li>
+<li>缓存中本身没有数据，那么，数据库中的值必须是最新值。</li>
+</ul>
+<p>不符合这两种情况的，就属于缓存和数据库的数据不一致问题了。</p>
+<h4 id="解决-4">解决</h4>
+<h5 id="重试机制">重试机制</h5>
+<p>由于数据不一致的问题，大多跟缓存更新异常有关。比如更新数据库后，写缓存失败，从而导致缓存中存的是旧数据。</p>
+<p>所以可以采用重试机制。</p>
+<p>缓存更新失败后，可以重试一定的次数，如果最终重试失败，则将失败的 key 写入消息队列服务，待缓存访问恢复后，将这些 key 从缓存删除。这些 key 在再次被查询时，重新从 DB 加载，从而保证数据的一致性。</p>
+<h5 id="缓存更新策略">缓存更新策略</h5>
+<p>对于缓存的更新，我们要考虑两个问题：</p>
+<ol>
+<li>更新缓存 VS 删除缓存</li>
+<li>先删除缓存，再更新数据库 VS 先更新数据库，再删除缓存</li>
+</ol>
+<p>对于第一个问题，更新还是删除缓存，假设在多次更新操作的中间，并未发生查询，那么更新动作实际上只有最后一次生效，中间的更新动作意义并不大，所以我们选择将缓存删除，等待再次查询时，将缓存中的数据加载出来。</p>
+<p>对于第二个问题，需要我们着重考虑。</p>
+<p><strong>情况一：先删除缓存，再更新数据库</strong></p>
+<p>在没有并发的情况下，如果删除缓存成功，但更新数据库失败，那么当请求再次访问，查询的就是脏数据，这里使用重试机制解决。</p>
+<p>而在并发的情况下，假设线程 A 删除缓存值后，还没有来得及更新数据库（网络延迟等原因），线程 B 就开始读取数据了，此时，线程 B 缓存未命中，则去数据库读取。这会带来两个问题：</p>
+<ul>
+<li>线程 B 读取到了旧值；</li>
+<li>线程 B 是在缓存缺失的情况下读取的数据库，所以，它还会把旧值写入缓存，这可能会导致其他线程从缓存中读到旧值。</li>
+</ul>
+<p>等到线程 B 从数据库读取完数据、更新了缓存后，线程 A 才开始更新数据库，此时，缓存中的数据是旧值，而数据库中的是最新值，两者就不一致了。</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>线程 A</th>
+<th>线程 B</th>
+<th>问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>t1</td>
+<td>删除 k 的缓存值</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>t2</td>
+<td></td>
+<td>1. 读取数据 k，缓存未命中，从数据库中读取 k，读到旧值<br>2. 将数据 k 写入缓存</td>
+<td>1. 线程 A 尚未更新数据库的值，导致线程 B 读到旧值<br>2. 线程 B 将旧值写入缓存，导致其他线程可能读到旧值。</td>
+</tr>
+<tr>
+<td>t3</td>
+<td>更新数据库中的 k</td>
+<td></td>
+<td>缓存中是旧值，而数据库中是新值，缓存不一致</td>
+</tr>
+</tbody>
+</table>
+<p>这里解决的方案是线程 A 更新完数据库值以后，让它先 sleep 一小段时间，再进行一次缓存删除操作。</p>
+<p>之所以要加上 sleep 的这段时间，就是为了让线程 B 能够先从数据库读取数据，再把缺失的数据写入缓存，然后，线程 A 再进行删除。所以，线程 A sleep 的时间，需要大于线程 B 读取数据再写入缓存的时间。</p>
+<p>这个时间如何确定呢？建议在业务程序运行的时候，统计下线程读数据和写缓存的操作时间，以此为基础来进行估算。</p>
+<p>这样一来，其它线程读取数据时，会发现缓存缺失，所以会从数据库中读取最新值。因为这个方案会在第一次删除缓存值后，延迟一段时间再次进行删除，所以我们也把它叫做 “延迟双删”。</p>
+<p><strong>情况二：先更新数据库值，再删除缓存值。</strong></p>
+<p>在没有并发的情况下，如果更新数据库成功，但删除缓存失败，那么当请求再次访问，查询的就是脏数据，也是使用重试机制解决。</p>
+<p>而在并发的情况下，假设线程 A 删除了数据库中的值，但还没来得及删除缓存值，线程 B 就开始读取数据了，此时，线程 B 查询缓存时，发现缓存命中，就会直接从缓存中读取旧值。</p>
+<p>不过，在这种情况下，如果其他线程并发读缓存的请求不多，那么就不会有很多请求读取到旧值。而且，线程 A 一般也会很快删除缓存，这样一来，其他线程再次读取时，就会发生缓存缺失，进而从数据库中读取最新值。所以，这种情况对业务的影响较小。</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>线程 A</th>
+<th>其他线程</th>
+<th>问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>t1</td>
+<td>删除数据库中的数据 k</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>t2</td>
+<td></td>
+<td>读取数据 k，缓存命中，但读取的是脏数据</td>
+<td>线程 A 尚未删除缓存值，导致其它线程读取的是脏数据</td>
+</tr>
+<tr>
+<td>t3</td>
+<td>删除缓存中的数据库 k</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h4 id="总结">总结</h4>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis-c40ca60663dd/image-20231226104533421.png" srcset="/img/loading.gif" lazyload alt="总结"></p>
+<h4 id="推荐方案">推荐方案</h4>
+<p>在大多数业务场景下，建议优先使用先更新数据库再删除缓存的策略，原因有两个：</p>
+<ol>
+<li>先删除缓存值再更新数据库，有可能导致请求因缓存缺失而访问数据库，给数据库带来压力；</li>
+<li>如果业务应用中读取数据库和写缓存的时间不好估算，那么，延迟双删中的等待时间就不好设置。</li>
+</ol>
+<p>不过，当使用先更新数据库再删除缓存时，如果业务层要求必须读取一致的数据，那么，就需要在更新数据库时，先在 Redis 缓存客户端暂存并发读请求，等数据库更新完、缓存值删除后，再读取数据，从而保证数据一致性。</p>
+<h3 id="5-5-数据并发竞争">5.5 数据并发竞争</h3>
+<h4 id="问题描述-5">问题描述</h4>
+<p>数据并发竞争，是指在高并发访问场景，一旦缓存访问没有找到数据，大量请求就会并发查询数据库，导致数据库压力大增的现象。</p>
+<p>数据并发竞争，主要是由于多个进程/线程中，有大量并发请求获取相同的数据，而这个数据 key 因为正好过期、被剔除等各种原因在缓存中不存在，这些进程/线程之间没有任何协调，然后一起并发查询数据库，请求那个相同的 key，最终导致数据库压力大增。</p>
+<h4 id="解决-5">解决</h4>
+<p>要解决并发竞争，有 2 种方案。</p>
+<ul>
+<li>
+<p>方案一是使用全局锁。在 <strong>缓存击穿</strong> 的方案具体描述过，这里不再赘述。</p>
+</li>
+<li>
+<p>方案二是，对缓存数据保持多个备份，即便其中一个备份中的数据过期或被剔除了，还可以访问其他备份，从而减少数据并发竞争的情况。</p>
+</li>
+</ul>
+<h3 id="5-6-Hot-Key">5.6 Hot Key</h3>
+<h4 id="问题描述-6">问题描述</h4>
+<p>对于大多数互联网系统，数据是分冷热的。比如最近的新闻、新发表的微博被访问的频率最高，而比较久远的之前的新闻、微博被访问的频率就会小很多。而在突发事件发生时，大量用户同时去访问这个突发热点信息，访问这个 Hot key，这个突发热点信息所在的缓存节点就很容易出现过载和卡顿现象，甚至崩溃。</p>
+<h4 id="原因-4">原因</h4>
+<p>Hot key 引发缓存系统异常，主要是因为突发热门事件发生时，超大量的请求访问热点事件对应的 key，比如微博中数十万、数百万的用户同时去吃一个新瓜。数十万的访问请求同一个 key，流量集中打在一个缓存节点机器，这个缓存机器很容易被打到物理网卡、带宽、CPU 的极限，从而导致缓存访问变慢、卡顿。</p>
+<h4 id="解决-6">解决</h4>
+<p>要解决这种极热 key 的问题，首先要找出这些 Hot key 来。对于重要节假日、线上促销活动、集中推送这些提前已知的事情，可以提前评估出可能的热 key 来。而对于突发事件，无法提前评估，可以通过 Spark，对应流任务进行实时分析，及时发现新发布的热点 key。而对于之前已发出的事情，逐步发酵成为热 key 的，则可以通过 Hadoop 对批处理任务离线计算，找出最近历史数据中的高频热 key。</p>
+<p>找到热 key 后，就有很多解决办法了。</p>
+<p>首先可以将这些热 key 进行分散处理，比如一个热 key 名字叫 hotkey，可以被分散为 hotkey#1、hotkey#2、hotkey#3，……hotkey#n，这 n 个 key 分散存在多个缓存节点，当客户端请求时，随机访问其中某个后缀的 hotkey，这样就可以把热 key 的请求打散，避免一个缓存节点过载。</p>
+<p>其次，也可以 key 的名字不变，对缓存提前进行多副本 + 多级结合的缓存架构设计。</p>
+<p>再次，如果热 key 较多，还可以通过监控体系对缓存的 SLA 实时监控，通过快速扩容来减少热 key 的冲击。</p>
+<p>最后，业务端还可以使用本地缓存，将这些热 key 记录在本地缓存，来减少对远程缓存的冲击。</p>
+<h3 id="5-7-Big-Key">5.7 Big Key</h3>
+<h4 id="问题描述-7">问题描述</h4>
+<p>大 key，是指在缓存访问时，部分 Key 的 Value 过大，读写、加载易超时的现象。</p>
+<h4 id="原因-5">原因</h4>
+<p>造成这些大 key 慢查询的原因很多。</p>
+<p>如果业务中这种大 key 很多，而这种 key 被大量访问，缓存组件的网卡、带宽很容易被打满，也会导致较多的大 key 慢查询。</p>
+<p>另外，如果大 key 缓存的字段较多，每个字段的变更都会引发对这个缓存数据的变更，同时这些 key 也会被频繁地读取，读写相互影响，也会导致慢查现象。</p>
+<p>最后，大 key 一旦被缓存淘汰，DB 再次重新加载可能需要花费很多时间，这也会导致大 key 查询慢的问题。</p>
+<h4 id="解决-7">解决</h4>
+<p>对于大 key，给出 2 种解决方案。</p>
+<p>1）第一种方案，数据存在 Redis 中，如业务数据存 set 格式，大 key 对应的 set 结构有几千几万个元素，这种写入 Redis 时会消耗很长的时间，导致 Redis 卡顿。此时，可以扩展新的数据结构，同时让客户端在这些大 key 写缓存之前，进行序列化构建，然后通过 restore 一次性写入。</p>
+<p>2）第二种方案时，将大 key 分拆为多个 key，尽量减少大 key 的存在。同时由于大 key 一旦穿透到 DB，加载耗时很大，所以可以对这些大 key 进行特殊照顾，比如设置较长的过期时间，比如缓存内部在淘汰 key 时，同等条件下，尽量不淘汰这些大 key。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="category-chain-item">微服务</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis/" class="category-chain-item">redis</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/redis/" class="print-no-link">#redis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Redis(二)—你真的了解缓存吗</div>
+      <div>http://ocsio.cn/微服务/redis-c40ca60663dd/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Ocsio</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年12月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis-f4c0246da897/" title="Redis(一)—入门 redis，你要了解这些">
+                        <span class="hidden-mobile">Redis(一)—入门 redis，你要了解这些</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/js/duration.js"></script> </div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
