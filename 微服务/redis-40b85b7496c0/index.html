@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://ocsio.cn/img/redis.png">
 <meta property="article:published_time" content="2023-12-26T03:05:04.000Z">
-<meta property="article:modified_time" content="2023-12-28T12:42:13.750Z">
+<meta property="article:modified_time" content="2023-12-29T05:09:36.167Z">
 <meta property="article:author" content="Ocsio">
 <meta property="article:tag" content="redis">
 <meta name="twitter:card" content="summary_large_image">
@@ -236,7 +236,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          943 字
+          1.3k 字
         
       </span>
     
@@ -247,7 +247,7 @@
         
         
         
-          8 分钟
+          11 分钟
         
       </span>
     
@@ -330,6 +330,65 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisIDWorker</span> &#123;<br>    <span class="hljs-comment">// 开始时间戳 2000-1-1 00:00:00</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">BEGIN_TIMESTAMP</span> <span class="hljs-operator">=</span> <span class="hljs-number">946684800L</span>;<br>    <span class="hljs-comment">// 序列号的位数</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">COUNT_BITS</span> <span class="hljs-operator">=</span> <span class="hljs-number">32</span>;<br><br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> StringRedisTemplate stringRedisTemplate;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * keyPrefix 是业务前缀</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">long</span> <span class="hljs-title function_">nextId</span><span class="hljs-params">(String keyPrefix)</span> &#123;<br>        <span class="hljs-comment">// 生成时间戳</span><br>        <span class="hljs-type">LocalDateTime</span> <span class="hljs-variable">now</span> <span class="hljs-operator">=</span> LocalDateTime.now();<br>        <span class="hljs-type">long</span> <span class="hljs-variable">nowSec</span> <span class="hljs-operator">=</span> now.toEpochSecond(ZoneOffset.UTC);<br>        <span class="hljs-type">long</span> <span class="hljs-variable">timeStamp</span> <span class="hljs-operator">=</span> nowSec - BEGIN_TIMESTAMP;<br>        <span class="hljs-comment">// 生成序列号</span><br>        <span class="hljs-type">String</span> <span class="hljs-variable">date</span> <span class="hljs-operator">=</span> now.format(DateTimeFormatter.ofPattern(<span class="hljs-string">&quot;yyyy:MM:dd&quot;</span>));<br>        <span class="hljs-type">long</span> <span class="hljs-variable">count</span> <span class="hljs-operator">=</span> stringRedisTemplate.opsForValue().increment(<span class="hljs-string">&quot;icr:&quot;</span> + keyPrefix + <span class="hljs-string">&quot;:&quot;</span> + date);<br>        <span class="hljs-comment">// 拼接并返回</span><br>        <span class="hljs-keyword">return</span> timeStamp &lt;&lt; COUNT_BITS | count;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>简单测试一波：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@SpringBootTest</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisIdWorkerTest</span> &#123;<br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> RedisIDWorker redisIDWorker;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">ExecutorService</span> <span class="hljs-variable">service</span> <span class="hljs-operator">=</span> Executors.newFixedThreadPool(<span class="hljs-number">500</span>);<br><br>    <span class="hljs-meta">@Test</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">test</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br>        System.out.println(<span class="hljs-string">&quot;开始&quot;</span>);<br>        <span class="hljs-type">CountDownLatch</span> <span class="hljs-variable">latch</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">CountDownLatch</span>(<span class="hljs-number">300</span>);<br>        <span class="hljs-type">Runnable</span> <span class="hljs-variable">task</span> <span class="hljs-operator">=</span> () -&gt; &#123;<br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100</span>; i++) &#123;<br>                <span class="hljs-type">long</span> <span class="hljs-variable">id</span> <span class="hljs-operator">=</span> redisIDWorker.nextId(<span class="hljs-string">&quot;order&quot;</span>);<br>                System.out.println(<span class="hljs-string">&quot;id = &quot;</span> + id);<br>            &#125;<br>            latch.countDown();<br>        &#125;;<br>        <span class="hljs-type">long</span> <span class="hljs-variable">begin</span> <span class="hljs-operator">=</span> System.currentTimeMillis();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">300</span>; i++) &#123;<br>            service.submit(task);<br>        &#125;<br>        latch.await();<br>        <span class="hljs-type">long</span> <span class="hljs-variable">end</span> <span class="hljs-operator">=</span> System.currentTimeMillis();<br>        System.out.println(<span class="hljs-string">&quot;time = &quot;</span> + (end - begin));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>当然你也可以有其他的解决方案：</p>
+<ol>
+<li>UUID</li>
+<li>雪花算法</li>
+<li>使用 Zookeeper 生成 ID 等</li>
+</ol>
+<h2 id="2-库存超卖">2. 库存超卖</h2>
+<h3 id="2-1-问题分析">2.1 问题分析</h3>
+<p>在电商项目中，特别是在高并发的秒杀场景下，对于并发线程的请求，如果不对并发进行处理，那么极有可能出现超卖问题，也就是商品的库存出现了负数，显然这是一种比较严重的问题。</p>
+<p>一般的秒杀流程如下：</p>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis-40b85b7496c0/image-20231229125212303.png" srcset="/img/loading.gif" lazyload alt="秒杀流程"></p>
+<p>这里判断库存是否充足，我们可以在数据库中查询库存量是否大于 0，或者将库存量存入 redis（后面异步优化再说），这里采用在数据库中查询的方案，可以写出下面的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">if</span> (voucher.getStock() &lt; <span class="hljs-number">1</span>) &#123;<br>    <span class="hljs-comment">// 库存不足</span><br>    <span class="hljs-keyword">return</span> Result.fail(<span class="hljs-string">&quot;库存不足！&quot;</span>);<br>&#125;<br><span class="hljs-comment">// 扣减库存</span><br><span class="hljs-type">boolean</span> <span class="hljs-variable">success</span> <span class="hljs-operator">=</span> seckillVoucherService.update()<br>        .setSql(<span class="hljs-string">&quot;stock= stock -1&quot;</span>)<br>        .eq(<span class="hljs-string">&quot;voucher_id&quot;</span>, voucherId).update();<br><span class="hljs-keyword">if</span> (!success) &#123;<br>    <span class="hljs-comment">// 扣减库存</span><br>    <span class="hljs-keyword">return</span> Result.fail(<span class="hljs-string">&quot;库存不足！&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>由于查询库存，扣减库存并不是原子操作，那么在多个线程的并发请求下，</p>
+<table>
+<thead>
+<tr>
+<th>时间 / 库存</th>
+<th>线程 A</th>
+<th>线程 B</th>
+<th>线程 C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>t0 / 1</td>
+<td>查询库存，结果 1</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>t1 / 1</td>
+<td></td>
+<td>查询库存，结果 1</td>
+<td>查询库存，结果 1</td>
+</tr>
+<tr>
+<td>t2 / 1</td>
+<td>判断结果是否大于 0，是则扣减库存</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>t3 / 0</td>
+<td></td>
+<td>判断结果是否大于 0，是则扣减库存</td>
+<td>判断结果是否大于 0，是则扣减库存</td>
+</tr>
+<tr>
+<td>t4 / -2</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>在最后，出现了库存的超卖问题。</p>
+<h3 id="2-2-解决方案">2.2 解决方案</h3>
+<p><img src="/%E5%BE%AE%E6%9C%8D%E5%8A%A1/redis-40b85b7496c0/image-20231229124959876.png" srcset="/img/loading.gif" lazyload alt="一人一单"></p>
 
                 
               </div>
