@@ -1,0 +1,881 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/logo.png">
+  <link rel="icon" href="/img/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Ocsio">
+  <meta name="keywords" content="java">
+  
+    <meta name="description" content="redis 中有哪些高效的数据结构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis 中有哪些高效的数据结构">
+<meta property="og:url" content="http://ocsio.cn/java/redis-25334f7a71a2/index.html">
+<meta property="og:site_name" content="Ocsio">
+<meta property="og:description" content="redis 中有哪些高效的数据结构">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ocsio.cn/java/redis-25334f7a71a2/image-20240116172332248.png">
+<meta property="og:image" content="http://ocsio.cn/java/redis-25334f7a71a2/image-20240116173049145.png">
+<meta property="article:published_time" content="2023-12-28T11:11:00.000Z">
+<meta property="article:modified_time" content="2024-01-16T14:21:58.627Z">
+<meta property="article:author" content="Ocsio">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://ocsio.cn/java/redis-25334f7a71a2/image-20240116172332248.png">
+  
+  
+  
+  <title>redis 中有哪些高效的数据结构 - Ocsio</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"ocsio.cn","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"JAVA"},"copy_btn":true,"image_caption":{"enable":false},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.0.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Ocsio</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/" target="_self">
+                <i class="iconfont icon-link-fill"></i>
+                <span>友链</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/background.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="redis 中有哪些高效的数据结构"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-12-28 19:11" pubdate>
+          2023年12月28日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          19 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">redis 中有哪些高效的数据结构</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1>redis 中有哪些高效的数据结构</h1>
+<p>redis 性能如此优秀和高效的数据结构也离不开关系。</p>
+<p>redis 中，数据是按键值对的方式存储的，而键值对又是按照一定的数据结构来组织的，操作键值对就是对数据结果进行 CRUD 操作。</p>
+<p>所以高效的数据结构是 redis 快速处理数据的基础。</p>
+<p>在 redis 中，值的数据类型有 String（字符串）、List（列表）、Hash（哈希）、Set（集合）和 Sorted Set（有序集合），而这些数据类型的底层则是由简单动态字符串、双向链表、压缩列表、哈希表、跳表以及整数数组构成的，它们的对应关系如下：</p>
+<p><img src="/java/redis-25334f7a71a2/image-20240116172332248.png" srcset="/img/loading.gif" lazyload alt="数据结构"></p>
+<p>可以看到，String 类型的底层实现只有一种数据结构，也就是简单动态字符串。而 List、Hash、Set 和 Sorted Set 这四种数据类型，都有两种底层实现结构。通常情况下，我们会把这四种类型称为集合类型，它们的特点是 <strong>一个键对应了一个集合的数据</strong>。</p>
+<p>而 redis 中的键则总是一个字符串对象 String。</p>
+<p>为了实现客户端的键值访问，redis 使用一个全局哈希表来保存所有的键值对，而对于集合类型的值，则全局哈希表中存储的是指向该集合的指针（redis 用 c 写的）。</p>
+<p><img src="/java/redis-25334f7a71a2/image-20240116173049145.png" srcset="/img/loading.gif" lazyload alt="全局哈希表"></p>
+<p>下面我们一一来看这些数据结构。</p>
+
+    <div class="fold">
+      <div class="fold-title fold-info collapsed" data-toggle="collapse" href="#collapse-938c4142" role="button" aria-expanded="false" aria-controls="collapse-938c4142">
+        <div class="fold-arrow">▶</div>源码下载
+      </div>
+      <div class="fold-collapse collapse" id="collapse-938c4142">
+        <div class="fold-content">
+          <p><a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases">下载 redis 6.2.6</a></p>
+        </div>
+      </div>
+    </div>
+<h2 id="1-简单动态字符串-SDS">1. 简单动态字符串 SDS</h2>
+
+    <div class="fold">
+      <div class="fold-title fold-info collapsed" data-toggle="collapse" href="#collapse-076edf11" role="button" aria-expanded="false" aria-controls="collapse-076edf11">
+        <div class="fold-arrow">▶</div>源码位置
+      </div>
+      <div class="fold-collapse collapse" id="collapse-076edf11">
+        <div class="fold-content">
+          <figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">src</span><span class="hljs-punctuation">:</span><br>   <span class="hljs-bullet">-</span> <span class="hljs-string">sds.c</span><br>   <span class="hljs-bullet">-</span> <span class="hljs-string">sds.h</span><br></code></pre></td></tr></table></figure>
+        </div>
+      </div>
+    </div>
+<p>redis 中保存的 key 是字符串，value 往往是字符串或者字符串的集合。所以字符串是 redis 中最常用的一种数据结构。</p>
+<p>不过 redis 没有直接使用 c 语言中的字符串，因为 c 语言字符串存在很多问题：</p>
+<ul>
+<li>获取字符串长度的需要通过运算</li>
+<li>非二进制安全</li>
+<li>不可修改</li>
+</ul>
+<p>redis 构建了一种新的字符串结构，称为简单动态字符串（Simple Dynamic String），简称 SDS</p>
+<p>例如，执行命令：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sh"><span class="hljs-built_in">set</span> name ocsio<br></code></pre></td></tr></table></figure>
+<p>那么 redis 将在底层创建两个 SDS，其中一个是包含 “name” 的 SDS，另一个是包含 “ocsio” 的 SDS。</p>
+<p>SDS 的结构体如下：以 sdshdr8 为例</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> __<span class="hljs-title">attribute__</span> ((__<span class="hljs-title">packed__</span>)) <span class="hljs-title">sdshdr8</span> &#123;</span><br>    <span class="hljs-type">uint8_t</span> len; 		 <span class="hljs-comment">/* buf[] 已经使用的长度 */</span><br>    <span class="hljs-type">uint8_t</span> alloc; 		 <span class="hljs-comment">/* 除去头信息和结束符的长度，申请的 buf 数组的长度*/</span><br>    <span class="hljs-type">unsigned</span> <span class="hljs-type">char</span> flags; <span class="hljs-comment">/* 其中 3bit 表示类型，剩余 5bit 未使用 */</span><br>    <span class="hljs-type">char</span> buf[]; 		 <span class="hljs-comment">/* 字符数组 */</span><br>&#125;;<br></code></pre></td></tr></table></figure>
+<p>值得说明的是，SDS 的结构体虽然包含 4 部分，但是 SDS 的指针是指向 buf 数组的，而不是结构体头部，这样的实现的好处在于：</p>
+<ol>
+<li>与 c 语言的字符串结构兼容</li>
+<li>通过 SDS 的指针再向前就可以获取结构体头的大小（flag 字段），又可以进一步实际字符串的长度，这样保证了字符串的二进制安全。</li>
+</ol>
+<p>一些核心方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法名称</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sdsHdrSize</td>
+<td>计算 SDS 头部的大小（将 type 与 7 进行与运算）</td>
+</tr>
+<tr>
+<td>sdsReqType</td>
+<td>根据字符串长度获取 SDS 的类型</td>
+</tr>
+<tr>
+<td>sdsnewlen</td>
+<td>根据初始值和初始长度创建 SDS</td>
+</tr>
+<tr>
+<td>sdsfree</td>
+<td>释放 SDS</td>
+</tr>
+<tr>
+<td>sdsupdatelen</td>
+<td>对第一个 \0 终止符进行截取</td>
+</tr>
+<tr>
+<td>sdsclear</td>
+<td>清除 buf 数组，并将 \0 终止符设置到字符串的第一个位置</td>
+</tr>
+<tr>
+<td>sdsMakeRoomFor</td>
+<td>将字符串扩容到指定长度</td>
+</tr>
+<tr>
+<td>sdsRemoveFreeSpace</td>
+<td>压缩 SDS，移除冗余的空间，即让 len = alloc</td>
+</tr>
+<tr>
+<td>sdsAllocPtr</td>
+<td>返回 SDS 结构体的大小</td>
+</tr>
+<tr>
+<td>sdsAllocPtr</td>
+<td>获取 SDS 的头指针</td>
+</tr>
+</tbody>
+</table>
+<p>下面主要来看一下 SDS 扩容的过程：</p>
+<ol>
+<li>首先判断 SDS 预留的空间是否大于 addlen，若大于则直接返回。</li>
+<li>计算新的 SDS 需要占用的空间大小，若 newlen 小于 SDS_MAX_PREALLOC（1m），那么扩容为原来的 2 倍，否则在 newlen 的基础上加 1m 即可。</li>
+<li>根据 newlen 计算新的 SDS 的类型，若新类型和原来的 SDS 类型一致，则进行 s_realloc_usable 扩容，否则申请新的空间对 SDS 将进行重构，并释放原来的 SDS 内存空间。</li>
+<li>最后返回 SDS。</li>
+</ol>
+<p>源码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><code class="hljs c">sds <span class="hljs-title function_">sdsMakeRoomFor</span><span class="hljs-params">(sds s, <span class="hljs-type">size_t</span> addlen)</span> &#123;<br>    <span class="hljs-type">void</span> *sh, *newsh;<br>    <span class="hljs-type">size_t</span> avail = sdsavail(s);<br>    <span class="hljs-type">size_t</span> len, newlen, reqlen;<br>    <span class="hljs-type">char</span> type, oldtype = s[<span class="hljs-number">-1</span>] &amp; SDS_TYPE_MASK;<br>    <span class="hljs-type">int</span> hdrlen;<br>    <span class="hljs-type">size_t</span> usable;<br><br>    <span class="hljs-comment">/* Return ASAP if there is enough space left. */</span><br>    <span class="hljs-keyword">if</span> (avail &gt;= addlen) <span class="hljs-keyword">return</span> s;<br><br>    len = sdslen(s);<br>    sh = (<span class="hljs-type">char</span>*)s-sdsHdrSize(oldtype);<br>    reqlen = newlen = (len+addlen);<br>    assert(newlen &gt; len);   <span class="hljs-comment">/* Catch size_t overflow */</span><br>    <span class="hljs-keyword">if</span> (newlen &lt; SDS_MAX_PREALLOC)<br>        newlen *= <span class="hljs-number">2</span>;<br>    <span class="hljs-keyword">else</span><br>        newlen += SDS_MAX_PREALLOC;<br><br>    type = sdsReqType(newlen);<br><br>    <span class="hljs-comment">/* Don&#x27;t use type 5: the user is appending to the string and type 5 is</span><br><span class="hljs-comment">     * not able to remember empty space, so sdsMakeRoomFor() must be called</span><br><span class="hljs-comment">     * at every appending operation. */</span><br>    <span class="hljs-keyword">if</span> (type == SDS_TYPE_5) type = SDS_TYPE_8;<br><br>    hdrlen = sdsHdrSize(type);<br>    assert(hdrlen + newlen + <span class="hljs-number">1</span> &gt; reqlen);  <span class="hljs-comment">/* Catch size_t overflow */</span><br>    <span class="hljs-keyword">if</span> (oldtype==type) &#123;<br>        newsh = s_realloc_usable(sh, hdrlen+newlen+<span class="hljs-number">1</span>, &amp;usable);<br>        <span class="hljs-keyword">if</span> (newsh == <span class="hljs-literal">NULL</span>) <span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>;<br>        s = (<span class="hljs-type">char</span>*)newsh+hdrlen;<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-comment">/* Since the header size changes, need to move the string forward,</span><br><span class="hljs-comment">         * and can&#x27;t use realloc */</span><br>        newsh = s_malloc_usable(hdrlen+newlen+<span class="hljs-number">1</span>, &amp;usable);<br>        <span class="hljs-keyword">if</span> (newsh == <span class="hljs-literal">NULL</span>) <span class="hljs-keyword">return</span> <span class="hljs-literal">NULL</span>;<br>        <span class="hljs-built_in">memcpy</span>((<span class="hljs-type">char</span>*)newsh+hdrlen, s, len+<span class="hljs-number">1</span>);<br>        s_free(sh);<br>        s = (<span class="hljs-type">char</span>*)newsh+hdrlen;<br>        s[<span class="hljs-number">-1</span>] = type;<br>        sdssetlen(s, len);<br>    &#125;<br>    usable = usable-hdrlen<span class="hljs-number">-1</span>;<br>    <span class="hljs-keyword">if</span> (usable &gt; sdsTypeMaxSize(type))<br>        usable = sdsTypeMaxSize(type);<br>    sdssetalloc(s, usable);<br>    <span class="hljs-keyword">return</span> s;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h2 id="2-整数数组-IntSet">2. 整数数组 IntSet</h2>
+
+    <div class="fold">
+      <div class="fold-title fold-info collapsed" data-toggle="collapse" href="#collapse-9d3fcfc2" role="button" aria-expanded="false" aria-controls="collapse-9d3fcfc2">
+        <div class="fold-arrow">▶</div>源码位置
+      </div>
+      <div class="fold-collapse collapse" id="collapse-9d3fcfc2">
+        <div class="fold-content">
+          <figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">src</span><span class="hljs-punctuation">:</span><br>   <span class="hljs-bullet">-</span> <span class="hljs-string">intset.c</span><br>   <span class="hljs-bullet">-</span> <span class="hljs-string">intset.h</span><br></code></pre></td></tr></table></figure>
+        </div>
+      </div>
+    </div>
+<p>IntSet 是 redis 中的 Set 集合的一种实现方式，基于整数数组实现，并且具备长度可变、有序等高级特性，适用于去重，并且数据量较小的场景。</p>
+<p>IntSet 的结构如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-keyword">typedef</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">intset</span> &#123;</span><br>    <span class="hljs-type">uint32_t</span> encoding;<br>    <span class="hljs-type">uint32_t</span> length;<br>    <span class="hljs-type">int8_t</span> contents[];<br>&#125; intset;<br></code></pre></td></tr></table></figure>
+<p>其中 encoding 包含 3 种模式，表示存储的整数大小不同：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span><br></code></pre></td></tr></table></figure>
+<p>redis 保证在 contents 数组的每一个元素的编码方式一致。</p>
+<p>一些核心方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法名称</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>intsetNew</td>
+<td>创建一个空的 IntSet</td>
+</tr>
+<tr>
+<td>intsetAdd</td>
+<td>向 IntSet 中插入一个数</td>
+</tr>
+<tr>
+<td>intsetRemove</td>
+<td>从 IntSet 中删除一个数</td>
+</tr>
+<tr>
+<td>intsetFind</td>
+<td>一个数是否属于当前 IntSet</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>下面主要来看一下 IntSet 的创建、新增、编码升级并新增、删除、查找的源码。</p>
+<p>创建：</p>
+<ul>
+<li>分配内存，将编码设置为 int16 以节省内存，length 置为 0 并返回。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/* Create an empty intset. */</span><br>intset *<span class="hljs-title function_">intsetNew</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>    intset *is = zmalloc(<span class="hljs-keyword">sizeof</span>(intset));<br>    is-&gt;encoding = intrev32ifbe(INTSET_ENC_INT16);<br>    is-&gt;length = <span class="hljs-number">0</span>;<br>    <span class="hljs-keyword">return</span> is;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>新增：</p>
+<ul>
+<li>判断编码，看是否需要升级</li>
+<li>若不升级则找到应该插入的位置，利用二分查找</li>
+<li>插入到正确的位置后更新 length</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs c">intset *<span class="hljs-title function_">intsetAdd</span><span class="hljs-params">(intset *is, <span class="hljs-type">int64_t</span> value, <span class="hljs-type">uint8_t</span> *success)</span> &#123;<br>    <span class="hljs-comment">// _intsetValueEncoding 方法：获取当前 value 的编码</span><br>    <span class="hljs-type">uint8_t</span> valenc = _intsetValueEncoding(value);<br>    <span class="hljs-type">uint32_t</span> pos;<br>    <span class="hljs-keyword">if</span> (success) *success = <span class="hljs-number">1</span>;<br><br>    <span class="hljs-comment">/* Upgrade encoding if necessary. If we need to upgrade, we know that</span><br><span class="hljs-comment">     * this value should be either appended (if &gt; 0) or prepended (if &lt; 0),</span><br><span class="hljs-comment">     * because it lies outside the range of existing values. */</span><br>    <span class="hljs-comment">// 如果当前 value 的编码大于当前 IntSet 的编码则需要编码升级并新增</span><br>    <span class="hljs-keyword">if</span> (valenc &gt; intrev32ifbe(is-&gt;encoding)) &#123;<br>        <span class="hljs-comment">/* This always succeeds, so we don&#x27;t need to curry *success. */</span><br>        <span class="hljs-keyword">return</span> intsetUpgradeAndAdd(is,value);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-comment">/* Abort if the value is already present in the set.</span><br><span class="hljs-comment">         * This call will populate &quot;pos&quot; with the right position to insert</span><br><span class="hljs-comment">         * the value when it cannot be found. */</span><br>        <span class="hljs-comment">// 查找当前 value 是否存在，同时将小于 value 的最大值赋值给 pos</span><br>        <span class="hljs-keyword">if</span> (intsetSearch(is,value,&amp;pos)) &#123;<br>            <span class="hljs-keyword">if</span> (success) *success = <span class="hljs-number">0</span>;<br>            <span class="hljs-keyword">return</span> is;<br>        &#125;<br>        <span class="hljs-comment">// 保证插入时内存足够</span><br>        is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="hljs-number">1</span>);<br>        <span class="hljs-comment">// value 应该插入在 IntSet 中间，则让后面的值依次后移</span><br>        <span class="hljs-keyword">if</span> (pos &lt; intrev32ifbe(is-&gt;length)) intsetMoveTail(is,pos,pos+<span class="hljs-number">1</span>);<br>    &#125;<br>    <span class="hljs-comment">// 将 value 插入到 pos</span><br>    _intsetSet(is,pos,value);<br>    <span class="hljs-comment">// 更新 length</span><br>    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="hljs-number">1</span>);<br>    <span class="hljs-keyword">return</span> is;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>编码升级并新增：</p>
+<ul>
+<li>首先设置新的编码并重新申请内存空间</li>
+<li>接着倒序遍历，将原来的数依次加入到新的位置</li>
+<li>设置 value</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/* Upgrades the intset to a larger encoding and inserts the given integer. */</span><br><span class="hljs-type">static</span> intset *<span class="hljs-title function_">intsetUpgradeAndAdd</span><span class="hljs-params">(intset *is, <span class="hljs-type">int64_t</span> value)</span> &#123;<br>    <span class="hljs-type">uint8_t</span> curenc = intrev32ifbe(is-&gt;encoding);<br>    <span class="hljs-type">uint8_t</span> newenc = _intsetValueEncoding(value);<br>    <span class="hljs-type">int</span> length = intrev32ifbe(is-&gt;length);<br>    <span class="hljs-type">int</span> prepend = value &lt; <span class="hljs-number">0</span> ? <span class="hljs-number">1</span> : <span class="hljs-number">0</span>;<br><br>    <span class="hljs-comment">/* First set new encoding and resize */</span><br>    is-&gt;encoding = intrev32ifbe(newenc);<br>    is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="hljs-number">1</span>);<br><br>    <span class="hljs-comment">/* Upgrade back-to-front so we don&#x27;t overwrite values.</span><br><span class="hljs-comment">     * Note that the &quot;prepend&quot; variable is used to make sure we have an empty</span><br><span class="hljs-comment">     * space at either the beginning or the end of the intset. */</span><br>    <span class="hljs-comment">// 倒序遍历，为了不覆盖原来的值</span><br>    <span class="hljs-keyword">while</span>(length--)<br>        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));<br><br>    <span class="hljs-comment">/* Set the value at the beginning or the end. */</span><br>    <span class="hljs-comment">// 当前 value 的编码超出了原来的编码，所以 value 要么大于原来 IntSet 的最大值，要么小于原来的 IntSet 的最小值</span><br>    <span class="hljs-keyword">if</span> (prepend)<br>        _intsetSet(is,<span class="hljs-number">0</span>,value);<br>    <span class="hljs-keyword">else</span><br>        _intsetSet(is,intrev32ifbe(is-&gt;length),value);<br>    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="hljs-number">1</span>);<br>    <span class="hljs-keyword">return</span> is;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>删除：</p>
+<ul>
+<li>首先判断 value 的编码，若编码超出此时 IntSet 的编码则什么也不做。</li>
+<li>在删除时，没有进行编码降级处理，由于 IntSet 曾经出现过超大的数，那么再次出现的概率并不低，贸然降级，不仅当前需要处理IntSet 的编码，而且以后升级的概况也很高，所以不降级，以避免麻烦与无用的时间消耗。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/* Delete integer from intset */</span><br>intset *<span class="hljs-title function_">intsetRemove</span><span class="hljs-params">(intset *is, <span class="hljs-type">int64_t</span> value, <span class="hljs-type">int</span> *success)</span> &#123;<br>    <span class="hljs-comment">// 当前 value 的编码</span><br>    <span class="hljs-type">uint8_t</span> valenc = _intsetValueEncoding(value);<br>    <span class="hljs-type">uint32_t</span> pos;<br>    <span class="hljs-keyword">if</span> (success) *success = <span class="hljs-number">0</span>;<br>    <span class="hljs-comment">// 若当前 value 的编码已经大于 IntSet 的编码，则 value 一定不在 IntSet 中</span><br>    <span class="hljs-keyword">if</span> (valenc &lt;= intrev32ifbe(is-&gt;encoding) &amp;&amp; intsetSearch(is,value,&amp;pos)) &#123;<br>        <span class="hljs-type">uint32_t</span> len = intrev32ifbe(is-&gt;length);<br><br>        <span class="hljs-comment">/* We know we can delete */</span><br>        <span class="hljs-keyword">if</span> (success) *success = <span class="hljs-number">1</span>;<br><br>        <span class="hljs-comment">/* Overwrite value with tail and update length */</span><br>        <span class="hljs-keyword">if</span> (pos &lt; (len<span class="hljs-number">-1</span>)) intsetMoveTail(is,pos+<span class="hljs-number">1</span>,pos);<br>        is = intsetResize(is,len<span class="hljs-number">-1</span>);<br>        is-&gt;length = intrev32ifbe(len<span class="hljs-number">-1</span>);<br>    &#125;<br>    <span class="hljs-keyword">return</span> is;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>查找：</p>
+<ul>
+<li>二分查找</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// 搜索 value 的位置，找到则返回 1，并将 pos 设置为 value 在 IntSet 中的位置</span><br><span class="hljs-comment">// 若 value 在 IntSet 中不存在，则返回 0，并将 pos 设置为 value 在 IntSet 应该插入的位置（小于 value 的最大值）</span><br><span class="hljs-type">static</span> <span class="hljs-type">uint8_t</span> <span class="hljs-title function_">intsetSearch</span><span class="hljs-params">(intset *is, <span class="hljs-type">int64_t</span> value, <span class="hljs-type">uint32_t</span> *pos)</span> &#123;<br>    <span class="hljs-type">int</span> min = <span class="hljs-number">0</span>, max = intrev32ifbe(is-&gt;length)<span class="hljs-number">-1</span>, mid = <span class="hljs-number">-1</span>;<br>    <span class="hljs-type">int64_t</span> cur = <span class="hljs-number">-1</span>;<br><br>    <span class="hljs-keyword">if</span> (intrev32ifbe(is-&gt;length) == <span class="hljs-number">0</span>) &#123;<br>        <span class="hljs-comment">// IntSet 为空</span><br>        <span class="hljs-keyword">if</span> (pos) *pos = <span class="hljs-number">0</span>;<br>        <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>    &#125; <span class="hljs-keyword">else</span> <br>        <span class="hljs-comment">// _intsetGet 方法返回在 pos 位置的 value 值</span><br>        <span class="hljs-keyword">if</span> (value &gt; _intsetGet(is,max)) &#123;<br>            <span class="hljs-comment">// value 已经大于 IntSet 的最大值</span><br>            <span class="hljs-keyword">if</span> (pos) *pos = intrev32ifbe(is-&gt;length);<br>            <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (value &lt; _intsetGet(is,<span class="hljs-number">0</span>)) &#123;<br>            <span class="hljs-comment">// value 已经小于 IntSet 的最小值</span><br>            <span class="hljs-keyword">if</span> (pos) *pos = <span class="hljs-number">0</span>;<br>            <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>        &#125;<br>    &#125;<br>    <span class="hljs-comment">// 下面是一个二分查找</span><br>    <span class="hljs-keyword">while</span>(max &gt;= min) &#123;<br>        mid = ((<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span>)min + (<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span>)max) &gt;&gt; <span class="hljs-number">1</span>;<br>        cur = _intsetGet(is,mid);<br>        <span class="hljs-keyword">if</span> (value &gt; cur) &#123;<br>            min = mid+<span class="hljs-number">1</span>;<br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (value &lt; cur) &#123;<br>            max = mid<span class="hljs-number">-1</span>;<br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            <span class="hljs-keyword">break</span>;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">if</span> (value == cur) &#123;<br>        <span class="hljs-keyword">if</span> (pos) *pos = mid;<br>        <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-keyword">if</span> (pos) *pos = min;<br>        <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h2 id="3-哈希表-Dict">3. 哈希表 Dict</h2>
+
+    <div class="fold">
+      <div class="fold-title fold-info collapsed" data-toggle="collapse" href="#collapse-2b13d6ba" role="button" aria-expanded="false" aria-controls="collapse-2b13d6ba">
+        <div class="fold-arrow">▶</div>建议阅读
+      </div>
+      <div class="fold-collapse collapse" id="collapse-2b13d6ba">
+        <div class="fold-content">
+          <p><a href="/algorithm-53bff467bc4b/" title="哈希表">哈希表</a></p>
+        </div>
+      </div>
+    </div>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/java/" class="category-chain-item">java</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/java/redis/" class="category-chain-item">redis</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/java/" class="print-no-link">#java</a>
+      
+        <a href="/tags/redis/" class="print-no-link">#redis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>redis 中有哪些高效的数据结构</div>
+      <div>http://ocsio.cn/java/redis-25334f7a71a2/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Ocsio</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年12月28日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/java/redis-75ba9f9c982a/" title="redis 中的 IO 模型">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">redis 中的 IO 模型</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/java/redis-c5d4aef838ce/" title="redis 引入多线程">
+                        <span class="hidden-mobile">redis 引入多线程</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/js/duration.js"></script> </div><br/> 
+    </div>
+  
+  
+  
+    <!-- 备案信息 ICP for China -->
+    <div class="beian">
+  <span>
+    <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+      蜀ICP备2023042935号-1
+    </a>
+  </span>
+  
+</div>
+
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

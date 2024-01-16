@@ -1,0 +1,913 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/logo.png">
+  <link rel="icon" href="/img/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Ocsio">
+  <meta name="keywords" content="java">
+  
+    <meta name="description" content="redis 中的 IO 模型">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis 中的 IO 模型">
+<meta property="og:url" content="http://ocsio.cn/java/redis-75ba9f9c982a/index.html">
+<meta property="og:site_name" content="Ocsio">
+<meta property="og:description" content="redis 中的 IO 模型">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://ocsio.cn/java/redis-75ba9f9c982a/image-20240113032829044.png">
+<meta property="og:image" content="http://ocsio.cn/java/redis-75ba9f9c982a/image-20240113143358701.png">
+<meta property="og:image" content="http://ocsio.cn/java/redis-75ba9f9c982a/image-20240113143506342.png">
+<meta property="og:image" content="http://ocsio.cn/java/redis-75ba9f9c982a/image-20240113144131327.png">
+<meta property="og:image" content="http://ocsio.cn/java/redis-75ba9f9c982a/image-20240113144831625.png">
+<meta property="og:image" content="http://ocsio.cn/java/redis-75ba9f9c982a/image-20240113145231698.png">
+<meta property="og:image" content="http://ocsio.cn/java/redis-75ba9f9c982a/image-20240113145915698.png">
+<meta property="og:image" content="http://ocsio.cn/java/redis-75ba9f9c982a/image-20240114145235824.png">
+<meta property="article:published_time" content="2023-12-29T08:11:00.000Z">
+<meta property="article:modified_time" content="2024-01-15T08:07:39.011Z">
+<meta property="article:author" content="Ocsio">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://ocsio.cn/java/redis-75ba9f9c982a/image-20240113032829044.png">
+  
+  
+  
+  <title>redis 中的 IO 模型 - Ocsio</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"ocsio.cn","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"JAVA"},"copy_btn":true,"image_caption":{"enable":false},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 7.0.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Ocsio</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/" target="_self">
+                <i class="iconfont icon-link-fill"></i>
+                <span>友链</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/background.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="redis 中的 IO 模型"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-12-29 16:11" pubdate>
+          2023年12月29日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          53 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">redis 中的 IO 模型</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1>redis 中的 IO 模型</h1>
+<p>之前我们讨论到 redis 为什么那么快时，提到了 redis 中的 IO 模型，为了说明 redis 中的 IO 模型，又不得不提到那几种 IO 模型。</p>
+<h2 id="五种-IO-模型">五种 IO 模型</h2>
+<p>在《操作系统》这门课中，我们已经知道了什么是用户空间和内核空间、什么是普通指令和特权指令、什么是用户态和内核态。</p>
+<p>在某些情况下，用户程序需要调用一些特权资源或者是调用一些内核空间的操作，那么此时需要在用户态和内核态之间进行切换。</p>
+<p>如 Linux 系统为了提高 IO 效率，会在用户空间和内核空间加入缓冲区：</p>
+<ul>
+<li>写数据（写到磁盘或网卡）时，将用户缓冲数据拷贝到内核缓冲区，然后写入磁盘或网卡。</li>
+<li>读数据（读到内存）时，要从设备读取数据到内核缓冲区，然后拷贝到用户缓冲区。</li>
+</ul>
+<p>所以，用户程序在读写数据时，会向内核态申请，读取内核的数据，而内核数据要等待驱动程序从硬件上读取数据，当从磁盘或网卡上加载到数据之后，内核会将数据写入到内核的缓冲区中，然后再将数据拷贝到用户态的 buffer 中，然后再返回给应用程序。</p>
+<p>这个过程的速度较慢，主要体现在下面两点：</p>
+<ol>
+<li>用户程序在 read 读数据时，如果内核空间没有将数据准备好，写入到 buffer，那么用户进程则需要等待。</li>
+<li>数据的拷贝，数据需要从内核空间向用户空间拷贝。</li>
+</ol>
+<p>为了提升性能，我们希望 read 或者 wait for read 最好不要等待，或者等待的时间尽量的短。</p>
+<p>上面描述的过程如下图所示：</p>
+<p><img src="/java/redis-75ba9f9c982a/image-20240113032829044.png" srcset="/img/loading.gif" lazyload alt="过程"></p>
+<p>而在《UNIX 网络编程》一书中，描述了 5 种 IO 模型：</p>
+<ul>
+<li>阻塞 IO（Blocking IO）</li>
+<li>非阻塞 IO（Nonblocking IO）</li>
+<li>IO 多路复用（IO Multiplexing）</li>
+<li>信号驱动 IO（Signal Driven IO）</li>
+<li>异步 IO（Asynchronous IO）</li>
+</ul>
+<h3 id="阻塞-IO">阻塞 IO</h3>
+<p>所谓阻塞 IO，是指在用户从发起读请求开始，一直到读取到数据，都是阻塞的状态。</p>
+<p>过程如下图：</p>
+<p><img src="/java/redis-75ba9f9c982a/image-20240113143358701.png" srcset="/img/loading.gif" lazyload alt="阻塞 IO"></p>
+<p>用户读取数据时，发起 recvform 命令，尝试从内核加载数据，如果内核没有数据，则用户进入阻塞，此时内核从硬件上读取数据，内核读取数据之后，会把数据拷贝到用户态，并且返回，整个过程，都是阻塞的，这就是阻塞 IO。顾名思义，阻塞 IO 就是两个阶段都必须阻塞等待。</p>
+<p>阶段一：用户进程尝试读取数据（如网卡数据、磁盘数据），此时数据尚未到达，内核需要等待数据，用户进程也处于阻塞状态。</p>
+<p>阶段二：数据到达并拷贝到内核缓冲区，代表已就绪，内核将内核数据拷贝到用户缓冲区，拷贝过程中，用户进程依然阻塞，只有当拷贝完成，用户进程重新恢复运行，处理数据。</p>
+<p>在阻塞 IO 模型中，用户进程在两个阶段都是阻塞状态。</p>
+<h3 id="非阻塞-IO">非阻塞 IO</h3>
+<p>非阻塞 IO，就是指 recvfrom 操作会立即返回结果而不是阻塞用户进程。</p>
+<p><img src="/java/redis-75ba9f9c982a/image-20240113143506342.png" srcset="/img/loading.gif" lazyload alt="非阻塞 IO"></p>
+<p>在非阻塞 IO 模型中，用户进程第一个阶段是非阻塞，而第二个阶段是阻塞状态。</p>
+<p>虽然是非阻塞，但性能并没有得到提高。而且轮询机制会导致 CPU 空转，CPU 使用率暴增。</p>
+<h3 id="IO-多路复用">IO 多路复用</h3>
+<p>无论是阻塞 IO 还是非阻塞 IO，在一阶段，用户程序都需要调用 recvfrom 来获取数据，要么是阻塞，要么是不断轮询，都不能充分发挥 CPU 的作用。</p>
+<p>所以这两种方式性能都不太好。</p>
+<p>而在单线程下，只能依次处理 IO 事件，而像阻塞 IO 和非阻塞 IO 这种需要排队等待，如果正在处理的 IO 事件未就绪（数据不可读或不可写），线程就会被阻塞或者持续 CPU 导致空转，所有其他的 IO 事件都必须等待。</p>
+<p>对于这种情况，我们不妨打个比喻，就像在餐馆点餐，多个顾客和一个服务员：</p>
+<ul>
+<li>阻塞 IO：顾客们排队等待，只能一个接一个的点，服务员也只能一次处理一个顾客的请求。</li>
+<li>非阻塞 IO：顾客们也是排队等待，但是服务员不断询问队头的顾客，直到这个顾客点完为止。</li>
+</ul>
+<p>而现在的餐馆，一般是这样的，顾客进餐馆后，直接找到座位坐下，然后用手机扫描桌上的二维码进行点餐，服务员只需要在点餐台的电脑上查看有哪些顾客点了餐，并将这些交给厨师准备就可以了。</p>
+<p>事实上，这样的流程就类似于 IO 多路复用，其模型如下：</p>
+<p><img src="/java/redis-75ba9f9c982a/image-20240113144131327.png" srcset="/img/loading.gif" lazyload alt="IO 多路复用"></p>
+<p>在上面的例子中，服务员通过点餐台的电脑知道有顾客点好餐了，那么在 IO 模型中，用户进程是如何知道内核中数据是否就绪呢？</p>
+<p>这个问题的解决依赖于 Linux 中的文件描述符（File Descriptor）简称 FD，它是一个从 0 开始的无符号整数，用来关联 Linux 中的一个文件。在 Linux 中，一切皆文件，如常规文件、视频、硬件设备等，当然也包括网络套接字（Socket）。</p>
+<p>阶段一：用户进程调用 select，指定要监听的 FD 集合，那么内核就会监听 FD 对应的多个 socket，任意一个或多个 socket 数据就绪则返回 readable，这个过程中用户进程阻塞。</p>
+<p>阶段二：用户进程找到就绪的 socket，依次调用 recvfrom 读取数据，内核将数据拷贝到用户空间后，用户进程处理数据。</p>
+<p>当用户进程读取数据时，不再直接调用 recvfrom，而是调用 select 函数，select 函数会将需要监听的 FD 交给内核，由内核去检查 FD 的数据是否就绪了，如果数据就绪，就会通知用户进程数据就绪，然后来读取数据，再从内核中把数据拷贝给用户态，完成数据处理，如果 N 多个 FD 一个都没处理完，此时就进行等待。</p>
+<p>像 select 这样的系统调用，存在多种，常见的有：</p>
+<ul>
+<li>select</li>
+<li>poll</li>
+<li>epoll</li>
+</ul>
+<p>大致说明它们的区别，select 和 poll 在监听的数据准备好后，会将用户进程监听的整个 FD 集合拷贝到用户空间，用户进程需要在其中遍历，找到真正处理好的数据。</p>
+<p>而 epoll，则是在内核将数据准备好后，将准备好的数据直接拷贝到用户空间，避免了遍历的开销。</p>
+<p>IO 复用模式，用户进程阻塞在 select、poll、epoll 等系统调用上，而不是阻塞在 recvfrom 上，可以确保去读数据的时候，数据是一定存在的，其效率比原来的阻塞 IO 和非阻塞 IO 性能都要高。</p>
+<h4 id="select-模式">select 模式</h4>
+<p>select 模式是 Linux 早期使用的 IO 多路复用技术。</p>
+<p>相关源码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// 类型别名 __fd_mask</span><br><span class="hljs-keyword">typedef</span> <span class="hljs-type">long</span> <span class="hljs-type">int</span> __fd_mask;<br><br><span class="hljs-comment">/* fd_set 记录要监听的fd集合，及其对应状态 */</span><br><span class="hljs-keyword">typedef</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> &#123;</span><br>    <span class="hljs-comment">// fds_bits 是 long 类型数组，长度为 1024 / 32 = 32</span><br>    <span class="hljs-comment">// 共 1024 个 bit 位，每个 bit 位代表一个 fd，0 代表未就绪，1 代表就绪</span><br>    <span class="hljs-comment">// bitmap 的形式</span><br>    __fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];<br>    <span class="hljs-comment">// ...</span><br>&#125; fd_set;<br><br><span class="hljs-comment">/* select 函数，用于监听 fd_set，也就是多个 fd 的集合 */</span><br><span class="hljs-type">int</span> <span class="hljs-title function_">select</span><span class="hljs-params">(</span><br><span class="hljs-params">    <span class="hljs-type">int</span> nfds, 				<span class="hljs-comment">// 要监视的 fd_set 的最大 fd + 1</span></span><br><span class="hljs-params">    fd_set *readfds,		<span class="hljs-comment">// 要监听读事件的 fd 集合</span></span><br><span class="hljs-params">    fd_set *writefds,   	<span class="hljs-comment">// 要监听写事件的 fd 集合</span></span><br><span class="hljs-params">    fd_set *exceptfds,  	<span class="hljs-comment">// 要监听异常事件的 fd 集合</span></span><br><span class="hljs-params">    <span class="hljs-keyword">struct</span> timeval *timeout <span class="hljs-comment">// 超时时间，null-用不超时；0-不阻塞等待；大于0-固定等待时间</span></span><br><span class="hljs-params">)</span>;<br></code></pre></td></tr></table></figure>
+<p>将要处理的数据封装为 FD，并在用户空间创建 FD 的数组（大小为监听的 FD 的最大值 + 1，但最大不超过 1023），同时在数组中，需要标识控制哪些数据。</p>
+<p>假设要监听的 socket 连接，其 FD 为 1、2、5，那么此时执行 select 函数，并将整个 fd 数组拷贝到内核空间，内核遍历整个数组，看是否有已经准备就绪的数据，若没有则内核进入阻塞，否则内核向用户进程返回可读条件，此时用户进程发起 recvfrom 系统调用，同时内核将 fd 数组再次拷贝到用户空间，拷贝完成后，向用户进程返回成功指示。</p>
+<p>select 模式存在的问题是：</p>
+<ul>
+<li>整个 fd 数组在用户空间和内核空间需要拷贝两次。</li>
+<li>由于内核将整个 fd 数组拷贝到用户空间，所以用户进程需要遍历整个 fd 数组才能知道哪些数据就绪。</li>
+<li>整个 fd 数组的大小是固定的，是 1024。</li>
+</ul>
+<h4 id="poll-模式">poll 模式</h4>
+<p>poll 模式对 select 模式做了简单改进，但性能提升不明显。</p>
+<p>相关源码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// pollfd 中的事件类型</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> POLLIN     <span class="hljs-comment">// 可读事件</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> POLLOUT    <span class="hljs-comment">// 可写事件</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> POLLERR    <span class="hljs-comment">// 错误事件</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> POLLNVAL   <span class="hljs-comment">// fd 未打开</span></span><br>...<br><br><span class="hljs-comment">// pollfd 结构</span><br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">pollfd</span> &#123;</span><br>    <span class="hljs-type">int</span> fd;     	   <span class="hljs-comment">// 要监听的 fd</span><br>    <span class="hljs-type">short</span> <span class="hljs-type">int</span> events;  <span class="hljs-comment">// 要监听的事件类型：读、写、异常</span><br>    <span class="hljs-type">short</span> <span class="hljs-type">int</span> revents; <span class="hljs-comment">// 实际发生的事件类型</span><br>&#125;;<br><br><span class="hljs-comment">// poll 函数</span><br><span class="hljs-type">int</span> <span class="hljs-title function_">poll</span><span class="hljs-params">(</span><br><span class="hljs-params">    <span class="hljs-keyword">struct</span> pollfd *fds, <span class="hljs-comment">// pollfd 数组，可以自定义大小</span></span><br><span class="hljs-params">    <span class="hljs-type">nfds_t</span> nfds,    	<span class="hljs-comment">// 数组元素个数</span></span><br><span class="hljs-params">    <span class="hljs-type">int</span> timeout 		<span class="hljs-comment">// 超时时间</span></span><br><span class="hljs-params">)</span>;<br></code></pre></td></tr></table></figure>
+<p>具体 IO 流程</p>
+<ul>
+<li>首先创建 pollfd 数组，向其中添加监听的 fd 的信息，由于可以自定义数组大小，所以理论上能够监听的 fd 的数量是无限的。</li>
+<li>接着调用 poll 函数，将 pollfd 数组拷贝到内核空间，转为链表存储，无上限。</li>
+<li>然后内核遍历 fd，判断是否就绪。</li>
+<li>如果数据就绪或超时后，则拷贝 pollfd 数组到用户空间，返回就绪 fd 的数量 n。</li>
+<li>用户进程判断 n 是否大于 0，大于 0 则遍历 pollfd 数组，找到就绪的 fd 进一步处理。</li>
+</ul>
+<p><strong>与 select 对比</strong></p>
+<ul>
+<li>select 模式中的 fd_set 大小固定为 1024，而 pollfd 在内核中采用链表，理论上无上限。</li>
+<li>但是如果监听 fd 越多，每次遍历消耗时间也越久，性能反而会下降，所以实际上 poll 模式中的 fd 个数也不是无限的。</li>
+</ul>
+<h4 id="epoll-模式">epoll 模式</h4>
+<p>epoll 模式是相对于 select 和 poll 的巨大的改进。它主要提供了 3 个函数。相关源码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">eventpoll</span> &#123;</span><br>    <span class="hljs-comment">//...</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rb_root</span>  <span class="hljs-title">rbr</span>;</span>     <span class="hljs-comment">// 红黑树，记录要监听的 FD</span><br>    <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">list_head</span> <span class="hljs-title">rdlist</span>;</span> <span class="hljs-comment">// 链表，记录就绪的 FD</span><br>    <span class="hljs-comment">//...</span><br>&#125;;<br><br><span class="hljs-comment">// 1.创建一个 epoll 实例，内部是 event poll，返回对应的句柄 epfd</span><br><span class="hljs-type">int</span> <span class="hljs-title function_">epoll_create</span><span class="hljs-params">(<span class="hljs-type">int</span> size)</span>;<br><br><span class="hljs-comment">// 2.将一个 FD 添加到 epoll 的红黑树中，并设置 ep_poll_callback</span><br><span class="hljs-comment">// callback 触发时，就把对应的 FD 加入到 rdlist 就绪列表中</span><br><span class="hljs-type">int</span> <span class="hljs-title function_">epoll_ctl</span><span class="hljs-params">(</span><br><span class="hljs-params">    <span class="hljs-type">int</span> epfd,  				   <span class="hljs-comment">// epoll 实例的句柄</span></span><br><span class="hljs-params">    <span class="hljs-type">int</span> op,    				   <span class="hljs-comment">// 要执行的操作，包括：ADD、MOD、DEL</span></span><br><span class="hljs-params">    <span class="hljs-type">int</span> fd,    				   <span class="hljs-comment">// 要监听的 FD</span></span><br><span class="hljs-params">    <span class="hljs-keyword">struct</span> epoll_event *event  <span class="hljs-comment">// 要监听的事件类型：读、写、异常等</span></span><br><span class="hljs-params">)</span>;<br><br><span class="hljs-comment">// 3.检查 rdlist 列表是否为空，不为空则返回就绪的 FD 的数量</span><br><span class="hljs-type">int</span> <span class="hljs-title function_">epoll_wait</span><span class="hljs-params">(</span><br><span class="hljs-params">    <span class="hljs-type">int</span> epfd,                   <span class="hljs-comment">// epoll 实例的句柄</span></span><br><span class="hljs-params">    <span class="hljs-keyword">struct</span> epoll_event *events, <span class="hljs-comment">// 空 event 数组，用于接收就绪的 FD</span></span><br><span class="hljs-params">    <span class="hljs-type">int</span> maxevents,              <span class="hljs-comment">// events 数组的最大长度</span></span><br><span class="hljs-params">    <span class="hljs-type">int</span> timeout   				<span class="hljs-comment">// 超时时间，-1 用不超时；0 不阻塞；大于 0 为阻塞时间</span></span><br><span class="hljs-params">)</span>;<br></code></pre></td></tr></table></figure>
+<p>具体 IO 流程：</p>
+<ul>
+<li>用户进程首先调用 epoll_create 创建 epoll 实例，并返回对应的句柄 epfd。</li>
+<li>接着调用 epoll_ctl 将一个 fd 添加到 epoll 实例中的红黑树中，并设置对应的回调 ep_poll_callback。当该回调触发时，就会将对应的 fd 从红黑树中添加到就绪链表中。</li>
+<li>然后调用 epoll_wait，此时会在用户空间创建一个空的 events 数组存放就绪的 fd，并检查就绪链表，该过程需要参考配置的 timeout，看是一直等待、等待指定的时间或者不等待。</li>
+<li>假设此时数据准备完毕，那么就会触发 ep_poll_callback，并将就绪的 fd 添加到就绪队列，恰好此时调用了 epoll_wait，检查就绪队列发现有数据，就会将数据拷贝到 event 数组中，并返回对应就绪的 fd 的数量，用户进程收到响应后，从 events 中获取对应的数据，并处理。</li>
+</ul>
+<p>epoll 相比于 poll 和 select 的优化在什么地方？</p>
+<ul>
+<li>首先，select 模式，它主要做了两件事，即监听 fd，将 fd 拷贝到内核，以及等待这些 fd 就绪。而 epoll 模式将这两个功能拆分为了两个函数，epoll_ctl 就是监听 fd，而 epoll_wait 才是等待 fd 就绪，那么如果监听一个 fd，epoll 模式中只需要 <strong>执行一次</strong> epoll_ctl 将 fd 加入到红黑树即可，以后都是循环执行 epoll_wait，所以这就避免了在 select 模式中不断将整个 fd 数组在内核空间和用户空间的来回拷贝的情况。</li>
+<li>其次，在 select 模式和 poll 模式中，每一次需要把内核中的所有 fd 都拷贝回用户空间，无论是就绪还是没就绪，而 epoll 模式只需要拷贝就绪的 fd，这也提升了性能，同时，用户进程也无需像在 select 和 poll 模式那样遍历整个 fd 数组，找到就绪的 fd，因为 epoll 模式中拷贝到用户空间的都是就绪的 fd，那么用户进程可以直接获取使用。</li>
+<li>最后是 fd 的数量问题，select 模式中，能监听的 fd 数组的最大数量就是 1024，而在 poll 模式中，底层采用链表存储这些 fd，虽然允许监听的 fd 的数量没有上限，但是如果 fd 数量过多，遍历链表的性能不可忽略，而在 epoll 模式中，使用红黑树存储监听的 fd，而红黑树的性能是很稳定的，不会因为节点的增多导致查询性能的下降，所以 epoll 模式是真的可以尽可能多的监听 fd。</li>
+</ul>
+<h4 id="事件通知机制">事件通知机制</h4>
+<p>当 fd 可读时，调用 epoll_wait 可以得到通知，但是通知的模式有两种：</p>
+<ul>
+<li>LevelTriggered：LT，当 fd 有数据可读时，会重复通知用户进程多次，每调用一次 epoll_wait 则通知一次，直到数据处理完毕，这是 epoll 的默认模式。</li>
+<li>EdgeTriggered：ET，当 fd 有数据可读时，无论数据是否处理完毕，用户进程都只会被通知一次。</li>
+</ul>
+<p>一个例子：</p>
+<ul>
+<li>假设一个客户端 socket 对应的 fd 已经注册到了 epoll 实例中。</li>
+<li>客户端 socket 发送了 2kb 的数据。</li>
+<li>服务端调用 epoll_wait，并得到内核的可读通知。</li>
+<li>那么服务端从 fd 读取了 1kb 数据。</li>
+<li>由于数据没有读完毕，所以需要再次调用 epoll_wait 循环读取。</li>
+</ul>
+<p>如果采用 LT 模式，因为 fd 中仍有 1kb 数据未读，则循环调用 epoll_wait，此时用户进程会再一次得到可读通知。而如果采用 ET 模式，那么在第一次调用 epoll_wait 时，用户进程已经得到一次可读通知，后续即使数据没有读完，也不会再接受到可读通知。</p>
+<p>采用 LT 模式，那么通知频率很高，会存在很多重复通知，影响性能，同时可能出现惊群现象，而 ET 模式只会通知一次，效率高，我们可以基于非阻塞 IO 循环读取解决数据读取不完整问题。</p>
+<h3 id="信号驱动-IO">信号驱动 IO</h3>
+<p>信号驱动 IO 是与内核建立 SIGIO 的信号处理程序并设置回调，当内核有 FD 就绪时，会发出 SIGIO 信号通知用户，期间用户应用可以执行其它业务，无需阻塞等待。</p>
+<p>阶段一：用户进程调用 sigaction，注册信号处理函数，此时用户进程不进入阻塞，可以执行其它业务，当内核数据就绪后，回调用户进程的 SIGIO 处理函数。</p>
+<p>阶段二：用户进程收到 SIGIO 回调信号，则调用 recvfrom，内核将数据拷贝到用户空间，接着用户进程处理数据。</p>
+<p>但是当有大量 IO 操作时，信号较多，SIGIO 处理函数不能及时处理可能导致信号队列溢出，而且内核空间与用户空间的频繁信号交互性能也较低。</p>
+<p><img src="/java/redis-75ba9f9c982a/image-20240113144831625.png" srcset="/img/loading.gif" lazyload alt="信号驱动 IO"></p>
+<h3 id="异步-IO">异步 IO</h3>
+<p>用户进程先内核发起 aio_read 系统调用，该系统调用立即返回，并且在等待 IO 期间，用户进程不会阻塞，当内核将将数据从内核空间拷贝到用户空间后，由内核通知用户进程数据准备完毕。</p>
+<p>与信号驱动 IO 的区别：</p>
+<ul>
+<li>信号驱动 IO 是由内核通知用户进程何时启动一个 IO 操作。</li>
+<li>异步 IO 是由内核通知用户进程何时 IO 操作完成。</li>
+</ul>
+<p><img src="/java/redis-75ba9f9c982a/image-20240113145231698.png" srcset="/img/loading.gif" lazyload alt="异步 IO"></p>
+<h3 id="几种-IO-模型的对比">几种 IO 模型的对比</h3>
+<p>前 4 种模型的主要区别在于阶段一的处理，因为它们的阶段二是一致的，都是在数据从内核复制到用户空间，进程阻塞于 recvfrom 调用。而异步 IO 没有阻塞阶段。</p>
+<p>这里就可以描述同步 IO 和异步 IO：</p>
+<ul>
+<li>同步 IO：导致请求进程阻塞，直到 IO 操作完成。</li>
+<li>异步 IO：不会导致请求进程阻塞。</li>
+</ul>
+<p>所以只有异步 IO 模型是一种异步 IO 操作。</p>
+<p><img src="/java/redis-75ba9f9c982a/image-20240113145915698.png" srcset="/img/loading.gif" lazyload alt="对比"></p>
+<h2 id="redis-中的-IO-模型">redis 中的 IO 模型</h2>
+
+    <div class="fold">
+      <div class="fold-title fold-info collapsed" data-toggle="collapse" href="#collapse-938c4142" role="button" aria-expanded="false" aria-controls="collapse-938c4142">
+        <div class="fold-arrow">▶</div>源码下载
+      </div>
+      <div class="fold-collapse collapse" id="collapse-938c4142">
+        <div class="fold-content">
+          <p><a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases">下载 redis 6.2.6</a></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="fold">
+      <div class="fold-title fold-info collapsed" data-toggle="collapse" href="#collapse-9997dce9" role="button" aria-expanded="false" aria-controls="collapse-9997dce9">
+        <div class="fold-arrow">▶</div>了解 java nio
+      </div>
+      <div class="fold-collapse collapse" id="collapse-9997dce9">
+        <div class="fold-content">
+          <p><a href="/java/javase-beb1cfdacc32/" title="java nio">java nio</a></p>
+        </div>
+      </div>
+    </div>
+<p>我们在上面已经说明了五种 IO 模型，那么接下来说说在 redis 中的 IO 模型。</p>
+<p>在 redis 中，通过 IO 多路复用来提高网络性能，并且支持各种不同的多路复用实现，如 epoll、evport、kqueue、select，并对这些实现进行了封装，提供了统一的高性能时间 API 库：</p>
+<p>通过判断当前系统来选择具体的 IO 多路复用的实现。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">/* Include the best multiplexing layer supported by this system.</span><br><span class="hljs-comment"> * The following should be ordered by performances, descending. */</span><br><span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> HAVE_EVPORT</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;ae_evport.c&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>    <span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> HAVE_EPOLL</span><br>    <span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;ae_epoll.c&quot;</span></span><br>    <span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>        <span class="hljs-meta">#<span class="hljs-keyword">ifdef</span> HAVE_KQUEUE</span><br>        <span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;ae_kqueue.c&quot;</span></span><br>        <span class="hljs-meta">#<span class="hljs-keyword">else</span></span><br>        <span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;ae_select.c&quot;</span></span><br>        <span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br>    <span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">endif</span></span><br></code></pre></td></tr></table></figure>
+<p>并提供了统一的封装的 API（在 src/ae.c）。</p>
+<p>下面主要来看看 ae_epoll.c 文件，重要方法如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// 创建多路复用程序</span><br><span class="hljs-type">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">aeApiCreate</span><span class="hljs-params">(aeEventLoop *eventLoop)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    state-&gt;epfd = epoll_create(<span class="hljs-number">1024</span>);<br>    <span class="hljs-comment">// ...</span><br>&#125;<br><br><span class="hljs-comment">// 注册 fd</span><br><span class="hljs-type">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">aeApiAddEvent</span><span class="hljs-params">(aeEventLoop *eventLoop, <span class="hljs-type">int</span> fd, <span class="hljs-type">int</span> mask)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">if</span> (epoll_ctl(state-&gt;epfd,op,fd,&amp;ee) == <span class="hljs-number">-1</span>) <span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br>    <span class="hljs-comment">// ...</span><br>&#125;<br><br><span class="hljs-comment">// 删除 fd</span><br><span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">aeApiDelEvent</span><span class="hljs-params">(aeEventLoop *eventLoop, <span class="hljs-type">int</span> fd, <span class="hljs-type">int</span> delmask)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">if</span> (mask != AE_NONE) &#123;<br>        epoll_ctl(state-&gt;epfd,EPOLL_CTL_MOD,fd,&amp;ee);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-comment">/* Note, Kernel &lt; 2.6.9 requires a non null event pointer even for</span><br><span class="hljs-comment">         * EPOLL_CTL_DEL. */</span><br>        epoll_ctl(state-&gt;epfd,EPOLL_CTL_DEL,fd,&amp;ee);<br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>&#125;<br><br><span class="hljs-comment">// 等待 fd 就绪</span><br><span class="hljs-type">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">aeApiPoll</span><span class="hljs-params">(aeEventLoop *eventLoop, <span class="hljs-keyword">struct</span> timeval *tvp)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    retval = epoll_wait(state-&gt;epfd,state-&gt;events,eventLoop-&gt;setsize,<br>        tvp ? (tvp-&gt;tv_sec*<span class="hljs-number">1000</span> + (tvp-&gt;tv_usec + <span class="hljs-number">999</span>)/<span class="hljs-number">1000</span>) : <span class="hljs-number">-1</span>);<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>那么接下来通过源码流程来看一下 redis 的 IO 模型到底是怎样运行的。</p>
+<p>首先你需要找到 redis 的启动函数 main 函数，在 server.c 文件中，源码如下，这里我只给出了有关 IO 模型的重点源码部分：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span> **argv)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">// 初始化服务</span><br>    initServer();<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">// 开始监听事件循环</span><br>    aeMain(server.el);<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>我们继续看 initServer 函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">void</span> <span class="hljs-title function_">initServer</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">// aeCreateEventLoop 内部会调用 aeApiCreate</span><br>    server.el = aeCreateEventLoop(server.maxclients+CONFIG_FDSET_INCR);<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">/* Open the TCP listening socket for the user commands. */</span><br>    <span class="hljs-comment">// 监听 TCP 端口，创建 ServerSocket，并得到 FD</span><br>    <span class="hljs-keyword">if</span> (server.port != <span class="hljs-number">0</span> &amp;&amp;<br>        listenToPort(server.port,&amp;server.ipfd) == C_ERR) &#123;<br>        serverLog(LL_WARNING, <span class="hljs-string">&quot;Failed listening on port %u (TCP), aborting.&quot;</span>, server.port);<br>        <span class="hljs-built_in">exit</span>(<span class="hljs-number">1</span>);<br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">/* Create an event handler for accepting new connections in TCP and Unix</span><br><span class="hljs-comment">     * domain sockets. */</span><br>    <span class="hljs-comment">// 创建一个事件处理器，处理客户端连接，内部调用 aeApiAddEvent 监听当前 serverSocket FD</span><br>    <span class="hljs-comment">// 而 acceptTcpHandler 就是一个接受 TCP 请求的处理器</span><br>    <span class="hljs-comment">// 当有客户端连接到 ServerSocket，那么就会触发 acceptTcpHandler，这类似于回调机制</span><br>    <span class="hljs-keyword">if</span> (createSocketAcceptHandler(&amp;server.ipfd, acceptTcpHandler) != C_OK) &#123;<br>        serverPanic(<span class="hljs-string">&quot;Unrecoverable error creating TCP socket accept handler.&quot;</span>);<br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">/* Register before and after sleep handlers (note this needs to be done</span><br><span class="hljs-comment">     * before loading persistence since it is used by processEventsWhileBlocked. */</span><br>    <span class="hljs-comment">// 设置 epoll_wait 前的处理器</span><br>    aeSetBeforeSleepProc(server.el,beforeSleep);<br>    aeSetAfterSleepProc(server.el,afterSleep);<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>所以，initServer 函数，主要就做这么几件事，我们以 epoll 模式来说明：</p>
+<ol>
+<li>创建 epoll 实例，在内核中，相当于已经准备好了红黑树和链表。</li>
+<li>接下来创建 ServerSocket，得到 FD，即上面代码中的 listenToPort。</li>
+<li>然后将调用 createSocketAcceptHandler 函数，内部调用 aeApiAddEvent 监听当前的 server.ipfd，并绑定对应的回调处理方法，即 acceptTcpHandler，用于当客户端连接到 ServerSocket 时，触发该函数处理连接事件。</li>
+<li>接下来你会发现调用了一个 aeSetBeforeSleepProc 函数，这是因为，在监听 FD 后，用户进程就会调用 epoll_wait 函数，等待 FD 就绪，这里就是在设置调用 epoll_wait 之前的处理器。</li>
+</ol>
+<p>当 initServer 调用完毕，那么准备工作就做好了，但是还没有开始真正调用 epoll_wait。</p>
+<p>接下来看 aeMain 函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">void</span> <span class="hljs-title function_">aeMain</span><span class="hljs-params">(aeEventLoop *eventLoop)</span> &#123;<br>    eventLoop-&gt;stop = <span class="hljs-number">0</span>;<br>    <span class="hljs-keyword">while</span> (!eventLoop-&gt;stop) &#123;<br>        aeProcessEvents(eventLoop, AE_ALL_EVENTS|<br>                                   AE_CALL_BEFORE_SLEEP|<br>                                   AE_CALL_AFTER_SLEEP);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>继续跟进 aeProcessEvents</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> <span class="hljs-title function_">aeProcessEvents</span><span class="hljs-params">(aeEventLoop *eventLoop, <span class="hljs-type">int</span> flags)</span><br>&#123;<br>    <span class="hljs-comment">// 调用 epoll_wait 的前置处理器</span><br>    <span class="hljs-keyword">if</span> (eventLoop-&gt;beforesleep != <span class="hljs-literal">NULL</span> &amp;&amp; flags &amp; AE_CALL_BEFORE_SLEEP)<br>        eventLoop-&gt;beforesleep(eventLoop);<br><br>    <span class="hljs-comment">/* Call the multiplexing API, will return only on timeout or when</span><br><span class="hljs-comment">     * some event fires. */</span><br>    <span class="hljs-comment">// 等待 FD 就绪或者超时，返回就绪的 FD 的数量</span><br>    numevents = aeApiPoll(eventLoop, tvp);<br><br>    <span class="hljs-comment">/* After sleep callback. */</span><br>    <span class="hljs-comment">// 调用 epoll_wait 的后置处理器</span><br>    <span class="hljs-keyword">if</span> (eventLoop-&gt;aftersleep != <span class="hljs-literal">NULL</span> &amp;&amp; flags &amp; AE_CALL_AFTER_SLEEP)<br>        eventLoop-&gt;aftersleep(eventLoop);<br><br>    <span class="hljs-comment">// 循环处理就绪的 FD，调用对应的处理器</span><br>    <span class="hljs-keyword">for</span> (j = <span class="hljs-number">0</span>; j &lt; numevents; j++) &#123;<br>        <span class="hljs-comment">// ...</span><br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>此时一旦有客户端连接上来，那么 aeApiPoll 函数返回就绪 FD 的数量，并调用相应的处理器，对于 ServerSocket 来说，就是上面的 acceptTcpHandler 处理器，</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">void</span> <span class="hljs-title function_">acceptTcpHandler</span><span class="hljs-params">(aeEventLoop *el, <span class="hljs-type">int</span> fd, <span class="hljs-type">void</span> *privdata, <span class="hljs-type">int</span> mask)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">while</span>(max--) &#123;<br>        <span class="hljs-comment">// 返回客户端连接的 FD</span><br>        cfd = anetTcpAccept(server.neterr, fd, cip, <span class="hljs-keyword">sizeof</span>(cip), &amp;cport);<br>        <span class="hljs-comment">// ... </span><br>        <span class="hljs-comment">// 接受连接的处理器</span><br>        acceptCommonHandler(connCreateAcceptedSocket(cfd),<span class="hljs-number">0</span>,cip);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>在 acceptCommonHandler 函数中的的一个重要函数是 createClient，创建客户端：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs c">client *<span class="hljs-title function_">createClient</span><span class="hljs-params">(connection *conn)</span> &#123;<br>    client *c = zmalloc(<span class="hljs-keyword">sizeof</span>(client));<br>    <span class="hljs-keyword">if</span> (conn) &#123;<br>        <span class="hljs-comment">// ...</span><br>        <span class="hljs-comment">// 注册读处理器 readQueryFromClient，并在连接可读的时候被触发</span><br>        connSetReadHandler(conn, readQueryFromClient);<br>        <span class="hljs-comment">// ...</span><br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">return</span> c;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>整个服务端的注册和监听流程基本就是这样。</p>
+<p>下面来看看客户端发送命令后的执行流程：</p>
+<p>紧接着上面的 readQueryFromClient 函数，这是在客户端连接可读时触发的回调函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">void</span> <span class="hljs-title function_">readQueryFromClient</span><span class="hljs-params">(connection *conn)</span> &#123;<br>    <span class="hljs-comment">// 获取当前客户端，在客户端中有读写缓冲区</span><br>    client *c = connGetPrivateData(conn);<br>	<span class="hljs-comment">/* Check if we want to read from the client later when exiting from</span><br><span class="hljs-comment">     * the event loop. This is the case if threaded I/O is enabled. */</span><br>    <span class="hljs-comment">// 在 postponeClientRead 函数中，会调用 listAddNodeHead 函数将客户端添加到 server.clients_pending_read</span><br>    <span class="hljs-comment">// 队列，等待被写出</span><br>    <span class="hljs-keyword">if</span> (postponeClientRead(c)) <span class="hljs-keyword">return</span>;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">// 获取查询缓冲区 querybuf 的大小</span><br>    qblen = sdslen(c-&gt;querybuf);<br>    <span class="hljs-keyword">if</span> (c-&gt;querybuf_peak &lt; qblen) c-&gt;querybuf_peak = qblen;<br>    c-&gt;querybuf = sdsMakeRoomFor(c-&gt;querybuf, readlen);<br>    <span class="hljs-comment">// 读取请求数据到 querybuf 缓冲区</span><br>    nread = connRead(c-&gt;conn, c-&gt;querybuf+qblen, readlen);<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">// 解析客户端中缓冲区字符串，转换为 redis 命令存入 c-&gt;argv 数组</span><br>    processInputBuffer(c);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>跟入 processInputBuffer：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">void</span> <span class="hljs-title function_">processInputBuffer</span><span class="hljs-params">(client *c)</span> &#123;<br>    <span class="hljs-comment">// </span><br>    <span class="hljs-comment">/* We are finally ready to execute the command. */</span><br>    <span class="hljs-comment">// 真正开始执行命令</span><br>    <span class="hljs-keyword">if</span> (processCommandAndResetClient(c) == C_ERR) &#123;<br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>跟入 processCommandAndResetClient：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> <span class="hljs-title function_">processCommandAndResetClient</span><span class="hljs-params">(client *c)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-keyword">if</span> (processCommand(c) == C_OK) &#123;<br>        commandProcessed(c);<br>    &#125;<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>跟入 processCommand：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> <span class="hljs-title function_">processCommand</span><span class="hljs-params">(client *c)</span> &#123;<br>    <span class="hljs-comment">// 根据命令名称，查找命令对应的 command</span><br>    <span class="hljs-comment">/* Now lookup the command and check ASAP about trivial error conditions</span><br><span class="hljs-comment">     * such as wrong arity, bad command name and so forth. */</span><br>    c-&gt;cmd = c-&gt;lastcmd = lookupCommand(c-&gt;argv[<span class="hljs-number">0</span>]-&gt;ptr);<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">/* Exec the command */</span><br>    <span class="hljs-comment">// 执行命令</span><br>    <span class="hljs-keyword">if</span> (c-&gt;flags &amp; CLIENT_MULTI &amp;&amp;<br>        c-&gt;cmd-&gt;proc != execCommand &amp;&amp; c-&gt;cmd-&gt;proc != discardCommand &amp;&amp;<br>        c-&gt;cmd-&gt;proc != multiCommand &amp;&amp; c-&gt;cmd-&gt;proc != watchCommand &amp;&amp;<br>        c-&gt;cmd-&gt;proc != resetCommand)<br>    &#123;<br>        queueMultiCommand(c);<br>        <span class="hljs-comment">// 将执行结果写出</span><br>        addReply(c,shared.queued);<br>    &#125; <br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>跟入 addReply：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">void</span> <span class="hljs-title function_">addReply</span><span class="hljs-params">(client *c, robj *obj)</span> &#123;<br>    <span class="hljs-comment">// ... </span><br>    <span class="hljs-keyword">if</span> (sdsEncodedObject(obj)) &#123;<br>        <span class="hljs-comment">// 尝试将结果写入 c-&gt;buf 客户端写缓冲区，若 c-&gt;buf 写不下则写入 c-&gt;reply</span><br>        <span class="hljs-keyword">if</span> (_addReplyToBuffer(c,obj-&gt;ptr,sdslen(obj-&gt;ptr)) != C_OK)<br>            _addReplyProtoToList(c,obj-&gt;ptr,sdslen(obj-&gt;ptr));<br>    &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (obj-&gt;encoding == OBJ_ENCODING_INT) &#123;<br>        <span class="hljs-comment">/* For integer encoded strings we just convert it into a string</span><br><span class="hljs-comment">         * using our optimized function, and attach the resulting string</span><br><span class="hljs-comment">         * to the output buffer. */</span><br>        <span class="hljs-type">char</span> buf[<span class="hljs-number">32</span>];<br>        <span class="hljs-type">size_t</span> len = ll2string(buf,<span class="hljs-keyword">sizeof</span>(buf),(<span class="hljs-type">long</span>)obj-&gt;ptr);<br>        <span class="hljs-keyword">if</span> (_addReplyToBuffer(c,buf,len) != C_OK)<br>            _addReplyProtoToList(c,buf,len);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        serverPanic(<span class="hljs-string">&quot;Wrong obj-&gt;encoding in addReply()&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>那么此时，结果就已经保存到了客户端的写缓冲区中，并且已经添加到了一个名为 server.clients_pending_read 的队列中，但是结果还没有写到 socket。</p>
+<p>那么将结果写到 socket，这就要靠 beforeSleep 函数了，在这个函数中，有很多处理函数，用来处理不同的问题，其中与写结果相关的函数是 handleClientsWithPendingWritesUsingThreads</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">void</span> <span class="hljs-title function_">beforeSleep</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> aeEventLoop *eventLoop)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br> 	<span class="hljs-comment">/* Handle writes with pending output buffers. */</span><br>    handleClientsWithPendingWritesUsingThreads();<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>跟入 handleClientsWithPendingWritesUsingThreads：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> <span class="hljs-title function_">handleClientsWithPendingWritesUsingThreads</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> &#123;<br>    <span class="hljs-comment">// ...</span><br>    <span class="hljs-comment">// 将迭代器指向 server.clients_pending_write 的队头</span><br>    listRewind(server.clients_pending_write,&amp;li);<br>    <span class="hljs-keyword">while</span>((ln = listNext(&amp;li))) &#123;<br>        client *c = listNodeValue(ln);<br>        <span class="hljs-keyword">if</span> (clientHasPendingReplies(c) &amp;&amp;<br>            <span class="hljs-comment">// 内部调用 aeApiAddEvent 监听 socket 的 FD 读事件</span><br>            <span class="hljs-comment">// 并绑定写处理器 sendReplyToClient，将响应写到客户端 socket</span><br>                connSetWriteHandler(c-&gt;conn, sendReplyToClient) == AE_ERR)<br>        &#123;<br>            freeClientAsync(c);<br>        &#125;<br>    &#125;<br>    listEmpty(server.clients_pending_write);<br>    <span class="hljs-comment">// ...</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>那么 sendReplyToClient 处理器就会调用 writeToClient 将结果写回到客户端。</p>
+<p>最后再来看一下 redis 底层 IO 模型的整个流程：</p>
+<p><img src="/java/redis-75ba9f9c982a/image-20240114145235824.png" srcset="/img/loading.gif" lazyload alt="流程"></p>
+<ul>
+<li>首先会创建一个 ServerSocket，并将其 FD 注册到 EventLoop 上，这个 EventLoop 可以理解为一个 epoll 实例。</li>
+<li>接着为 ServerSocket 绑定一个处理器 tcpAccpetHandler 来处理 ServerSocket 上的可读事件。</li>
+<li>接下来执行 beforeSleep，执行完成如果还没有客户端连接上来，那么就调用 aeApiPoll 去等待就绪。</li>
+<li>此时有客户端连接上来，就会触发 ServerSocket 上的读事件，并调用对应的处理器，将客户端 socket 的 FD 注册到 EventLoop 上。</li>
+<li>此时 EventLoop 已经注册了 ServerSocket 和 Socket 的 FD，那么此时如果客户端 socket 可读，就会触发 socket 上的读事件，此时就会调用 readQueryFromClient 处理器，将请求数据写到客户端的查询缓冲区，并将其解析为 redis 命令，执行命令后将结果写到 buf 或者 reply，写好后将客户端加入到 server.clients_pending_write 队列。</li>
+<li>然后在 beforeSleep 函数中，调用 handleClientsWithPendingWritesUsingThreads 函数，遍历 server.clients_pending_write 队列为每一个客户端绑定一个 sendReplyToClient 处理器，而 EventLoop 会监听 socket 连接的写事件，并在可写时调用这个处理器，真正的将客户端缓冲区的数据写到客户端的 socket 中。</li>
+</ul>
+<p>而实际上，你将整体看的简单一点，redis 的 IO 模型主要是上图中灰色的部分，它整体上就是 <strong>IO 多路复用和事件派发</strong>。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/java/" class="category-chain-item">java</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/java/redis/" class="category-chain-item">redis</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/java/" class="print-no-link">#java</a>
+      
+        <a href="/tags/redis/" class="print-no-link">#redis</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>redis 中的 IO 模型</div>
+      <div>http://ocsio.cn/java/redis-75ba9f9c982a/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Ocsio</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年12月29日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/algorithm-e91e34dd231e/" title="代码随想录刷题—哈希表">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">代码随想录刷题—哈希表</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/java/redis-25334f7a71a2/" title="redis 中有哪些高效的数据结构">
+                        <span class="hidden-mobile">redis 中有哪些高效的数据结构</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/js/duration.js"></script> </div><br/> 
+    </div>
+  
+  
+  
+    <!-- 备案信息 ICP for China -->
+    <div class="beian">
+  <span>
+    <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+      蜀ICP备2023042935号-1
+    </a>
+  </span>
+  
+</div>
+
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
